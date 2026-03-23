@@ -58,7 +58,10 @@ export async function POST(request: Request) {
         section: selectedSection || cleanProfanity(row["section"]),
         batch: cleanProfanity(row["batch"]) || "N/A",
         year: (row["courseenrolledfor"] || row["course"] || row["year"] || "N/A")?.toString(),
-        is_cr: String(row["iscr"] || row["is_cr"] || row["role"]).toUpperCase() === "TRUE" || String(row["role"]).toUpperCase() === "CR" || String(row["cr"]).toUpperCase() === "Y",
+        is_cr: (() => {
+          const val = String(row["iscr"] ?? row["is_cr"] ?? row["cr"] ?? row["role"] ?? "").trim().toUpperCase();
+          return val === "TRUE" || val === "1" || val === "YES" || val === "Y" || val === "CR";
+        })(),
       };
     });
 

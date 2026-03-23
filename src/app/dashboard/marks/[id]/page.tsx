@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import LoadingPopup from "@/components/LoadingPopup";
 
-
 type Scorecard = {
   student_id: string;
   name: string;
@@ -17,6 +16,15 @@ type Scorecard = {
   rank_change: number;
 };
 
+function gradeChip(grade: string) {
+  if (!grade || grade === "?") return "bg-slate-500/15 text-slate-400 border border-slate-500/20";
+  const g = grade.toUpperCase();
+  if (g.startsWith("A")) return "bg-emerald-500/15 text-emerald-300 border border-emerald-500/25";
+  if (g.startsWith("B")) return "bg-sky-500/15 text-sky-300 border border-sky-500/25";
+  if (g.startsWith("C")) return "bg-amber-500/15 text-amber-300 border border-amber-500/25";
+  return "bg-red-500/15 text-red-400 border border-red-500/25";
+}
+
 export default function PointsTablePage() {
   const { id } = useParams();
   const router = useRouter();
@@ -27,9 +35,7 @@ export default function PointsTablePage() {
   const [isLocked, setIsLocked] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchTable();
-  }, [id]);
+  useEffect(() => { fetchTable(); }, [id]);
 
   const fetchTable = async () => {
     try {
@@ -43,7 +49,7 @@ export default function PointsTablePage() {
       } else {
         toast.error(data.error || "Failed to load marks");
       }
-    } catch (err) {
+    } catch {
       toast.error("Network error");
     } finally {
       setLoading(false);
@@ -51,134 +57,153 @@ export default function PointsTablePage() {
   };
 
   const handleFinalize = async () => {
-    if (!window.confirm("Are you sure you want to finalize this course? This permanently locks the scorecard and calculates final cohort rankings. No more marks can be uploaded.")) return;
-    
+    if (!window.confirm("Finalize this course? This permanently locks all scores and calculates final cohort ranks. This cannot be undone.")) return;
     setLoading(true);
     try {
-        const res = await fetch(`/api/marks/${id}/finalize`, { method: "POST" });
-        const data = await res.json();
-        if (res.ok) {
-            toast.success(data.message);
-            setIsLocked(true);
-            fetchTable(); // Refresh table entirely to pull accurate calculated ranks natively 
-        } else {
-            toast.error(data.error || "Failed to finalize course.");
-        }
-    } catch (e) {
-        toast.error("Network error trying to finalize.");
+      const res = await fetch(`/api/marks/${id}/finalize`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(data.message);
+        setIsLocked(true);
+        fetchTable();
+      } else {
+        toast.error(data.error || "Failed to finalize course.");
+      }
+    } catch {
+      toast.error("Network error trying to finalize.");
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
-  const sortedScores = useMemo(() => {
-    return [...scores].sort((a, b) => {
-       const totalA = a.total || 0;
-       const totalB = b.total || 0;
-       return totalB - totalA || a.name.localeCompare(b.name);
-    });
-  }, [scores]);
+  const sortedScores = useMemo(() =>
+    [...scores].sort((a, b) => (b.total || 0) - (a.total || 0) || a.name.localeCompare(b.name)),
+    [scores]
+  );
 
-  const getRankBadge = (change: number) => {
+  const getRankChange = (change: number) => {
     if (change === 999 || change === null) return null;
-    if (change > 0) return <span className="text-green-600 font-bold">↑{change}</span>;
-    if (change < 0) return <span className="text-red-600 font-bold">↓{Math.abs(change)}</span>;
-    return <span className="text-gray-400">—</span>;
+    if (change > 0) return <span className="text-emerald-400 font-bold text-xs">↑{change}</span>;
+    if (change < 0) return <span className="text-red-400 font-bold text-xs">↓{Math.abs(change)}</span>;
+    return <span className="text-slate-600 text-xs">—</span>;
   };
 
-  if (loading) return <LoadingPopup message="Evaluating and assembling dynamic grading tables..." />;
-
-  const hasAggregatedData = scores.some(s => s.rank !== null && s.total !== null);
+  if (loading) return <LoadingPopup message="Assembling the cohort grading table..." />;
 
   return (
-    <div className="p-10 max-w-7xl mx-auto space-y-10 animate-fade-in-up">
-      <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-gray-200/50">
+    <div className="p-8 max-w-full mx-auto space-y-7 animate-fade-in-up">
+
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-6 border-b border-white/[0.06]">
         <div>
-          <h1 className="text-4xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-primary to-purple-800 tracking-tight">Points Table</h1>
-          <p className="mt-2 text-base text-gray-500 font-medium">Live ranking and aggregated performance breakdown.</p>
+          <span className="text-xs font-bold text-violet-400 tracking-widest uppercase">Course Results</span>
+          <h1 className="mt-1 text-4xl font-black text-white tracking-tight" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            Points <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-indigo-400">Table</span>
+          </h1>
+          <p className="mt-1 text-sm text-slate-400">Live ranking and aggregated performance breakdown.</p>
         </div>
-        <div className="flex gap-4">
+
+        <div className="flex gap-3 flex-wrap">
           {role !== "STUDENT" && isLocked && (
-             <span className="px-6 py-2.5 bg-gray-100/50 text-gray-500 rounded-xl text-sm font-bold flex items-center gap-2 border border-gray-200 cursor-not-allowed">
-                🔒 Marks Finalized
-             </span>
+            <span className="px-5 py-2.5 bg-white/[0.04] text-slate-500 rounded-xl text-sm font-bold flex items-center gap-2 border border-white/[0.06]">
+              🔒 Finalized
+            </span>
           )}
           {role !== "STUDENT" && !isLocked && (
             <>
-              <button onClick={handleFinalize} className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-bold hover:shadow-[0_8px_20px_rgba(16,185,129,0.3)] transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2">
+              <button
+                onClick={handleFinalize}
+                className="px-5 py-2.5 bg-red-500/10 border border-red-500/25 text-red-400 hover:bg-red-500/20 hover:border-red-500/40 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2 shadow-[0_0_20px_rgba(239,68,68,0.1)] hover:shadow-[0_0_30px_rgba(239,68,68,0.2)]"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                 Finish Uploads
               </button>
-              <button onClick={() => router.push(`/dashboard/marks/${id}/upload`)} className="px-6 py-2.5 bg-gradient-to-r from-primary to-purple-600 text-white rounded-xl text-sm font-bold hover:shadow-[0_8px_20px_rgba(107,33,168,0.3)] transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+              <button
+                onClick={() => router.push(`/dashboard/marks/${id}/upload`)}
+                className="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl text-sm font-semibold hover:from-violet-500 hover:to-indigo-500 transition-all duration-200 flex items-center gap-2 shadow-[0_0_20px_rgba(124,58,237,0.3)] hover:shadow-[0_0_30px_rgba(124,58,237,0.5)]"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                 Upload Marks
               </button>
             </>
           )}
-          <button onClick={() => router.back()} className="px-6 py-2.5 bg-white border border-gray-200 shadow-sm text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-50 transition-all hover:scale-[1.02] active:scale-95">
-            Back
+          <button
+            onClick={() => router.back()}
+            className="px-5 py-2.5 bg-white/[0.05] border border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.08] rounded-xl text-sm font-semibold transition-all duration-200"
+          >
+            ← Back
           </button>
         </div>
       </div>
 
-      <div className="bg-white/60 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl border border-white/80 overflow-hidden relative">
+      {/* Table */}
+      <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-100">
-            <thead className="bg-gradient-to-r from-gray-50/80 to-white/80 backdrop-blur-md">
-              <tr>
-                <th className="px-6 py-5 text-left text-xs font-black text-gray-500 uppercase tracking-widest sticky left-0 bg-gray-50/90 backdrop-blur-md z-10 w-20 border-r border-gray-100/50">Rank</th>
-                <th className="px-6 py-5 text-left text-xs font-black text-gray-500 uppercase tracking-widest bg-gray-50/90 backdrop-blur-md z-10 w-20 border-r border-gray-100/50">S. Rank</th>
-                <th className="px-6 py-5 text-center text-xs font-black text-gray-500 uppercase tracking-widest w-20">Chg</th>
-                <th className="px-6 py-5 text-left text-xs font-black text-gray-500 uppercase tracking-widest">Student ID</th>
-                <th className="px-6 py-5 text-left text-xs font-black text-gray-500 uppercase tracking-widest">Target Details</th>
-                
+          <table className="min-w-full">
+            <thead>
+              <tr className="border-b border-white/[0.07] bg-white/[0.03]">
+                <th className="px-5 py-4 text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest">Rank</th>
+                <th className="px-5 py-4 text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sec.</th>
+                <th className="px-5 py-4 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">Chg</th>
+                <th className="px-5 py-4 text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest">Student ID</th>
+                <th className="px-5 py-4 text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest">Name</th>
                 {columns.map(col => (
-                  <th key={col} className="px-6 py-5 text-center text-xs font-black text-gray-500 uppercase tracking-widest">
-                    {col === '_total' ? 'Raw Sum' : col}
+                  <th key={col} className="px-5 py-4 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                    {col === '_total' ? 'Total' : col}
                   </th>
                 ))}
-                
-                <th className="px-6 py-5 text-center text-xs font-black text-gray-800 uppercase tracking-widest bg-gray-100/50">Agg. Total</th>
-                <th className="px-6 py-5 text-center text-xs font-black text-gray-800 uppercase tracking-widest bg-gray-100/50">L. Grade</th>
+                <th className="px-5 py-4 text-center text-[10px] font-bold text-violet-400 uppercase tracking-widest">Agg. Total</th>
+                <th className="px-5 py-4 text-center text-[10px] font-bold text-violet-400 uppercase tracking-widest">Grade</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100/80">
+            <tbody className="divide-y divide-white/[0.04]">
               {sortedScores.map((row, index) => (
-                <tr key={row.student_id} className="hover:bg-primary/5 transition-colors group">
-                  <td className="px-6 py-5 whitespace-nowrap text-sm font-black text-gray-900 sticky left-0 bg-white/90 group-hover:bg-purple-50/90 backdrop-blur border-r border-gray-100/50 shadow-[2px_0_5px_rgba(0,0,0,0.01)] transition-colors">
+                <tr key={row.student_id} className="hover:bg-white/[0.04] transition-colors group">
+                  <td className="px-5 py-4 whitespace-nowrap">
                     {row.total !== null ? (
-                        <>
-                           <span className="bg-clip-text text-transparent bg-gradient-to-br from-gray-900 to-gray-500 text-lg">#{row.rank || (index + 1)}</span>
-                           {row.rank_change === 999 && <span className="ml-3 px-2 py-0.5 text-[10px] uppercase font-black tracking-widest bg-blue-100 text-blue-700 rounded-md">New</span>}
-                        </>
-                    ) : ( <span className="text-gray-400 font-normal italic pr-2">Unranked</span> )}
+                      <span className="text-lg font-black text-white">#{row.rank || (index + 1)}</span>
+                    ) : (
+                      <span className="text-slate-600 italic text-sm">Unranked</span>
+                    )}
+                    {row.rank_change === 999 && (
+                      <span className="ml-2 text-[9px] uppercase font-black tracking-widest bg-sky-500/15 text-sky-400 border border-sky-500/20 px-1.5 py-0.5 rounded">New</span>
+                    )}
                   </td>
-                  <td className="px-6 py-5 whitespace-nowrap text-sm font-black text-purple-700 bg-white/90 group-hover:bg-purple-50/90 backdrop-blur border-r border-gray-100/50 transition-colors">
-                     {row.section_rank ? `#${row.section_rank}` : "-"}
+                  <td className="px-5 py-4 whitespace-nowrap text-sm font-bold text-violet-400">
+                    {row.section_rank ? `#${row.section_rank}` : "—"}
                   </td>
-                  <td className="px-6 py-5 whitespace-nowrap text-sm text-center">
-                    {row.rank_change !== 999 ? getRankBadge(row.rank_change) : ""}
+                  <td className="px-5 py-4 whitespace-nowrap text-sm text-center">
+                    {row.rank_change !== 999 ? getRankChange(row.rank_change) : ""}
                   </td>
-                  <td className="px-6 py-5 whitespace-nowrap text-sm font-bold font-mono text-primary/80">{row.student_id}</td>
-                  <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-900 font-bold">{row.name}</td>
-                  
+                  <td className="px-5 py-4 whitespace-nowrap text-sm font-mono font-bold text-violet-300/80">{row.student_id}</td>
+                  <td className="px-5 py-4 whitespace-nowrap text-sm font-semibold text-white">{row.name}</td>
                   {columns.map(col => (
-                    <td key={col} className="px-6 py-5 whitespace-nowrap text-sm text-center font-bold font-mono text-gray-600">
-                      {row.components[col] !== undefined ? row.components[col] : <span className="text-gray-300">-</span>}
+                    <td key={col} className="px-5 py-4 whitespace-nowrap text-sm text-center font-mono font-bold text-slate-300">
+                      {row.components[col] !== undefined ? (
+                        <span className={String(row.components[col]) === "AB" ? "text-red-400" : String(row.components[col]) === "ME" ? "text-amber-400" : ""}>
+                          {row.components[col]}
+                        </span>
+                      ) : (
+                        <span className="text-slate-600">—</span>
+                      )}
                     </td>
                   ))}
-
-                  <td className="px-6 py-5 whitespace-nowrap text-base text-center font-black text-primary bg-gray-50/30 group-hover:bg-primary/5 transition-colors">
-                    {row.total !== null && row.total !== undefined ? row.total.toFixed(2) : <span className="text-gray-400 font-normal italic text-sm">Pending</span>}
+                  <td className="px-5 py-4 whitespace-nowrap text-center">
+                    <span className="text-base font-black text-white">
+                      {row.total !== null && row.total !== undefined ? row.total.toFixed(1) : <span className="text-slate-600 italic text-sm font-normal">Pending</span>}
+                    </span>
                   </td>
-                  <td className="px-6 py-5 whitespace-nowrap text-base text-center font-black text-gray-900 bg-gray-50/30 group-hover:bg-primary/5 transition-colors">
-                    {row.grade || "?"}
+                  <td className="px-5 py-4 whitespace-nowrap text-center">
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold ${gradeChip(row.grade)}`}>
+                      {row.grade || "?"}
+                    </span>
                   </td>
                 </tr>
               ))}
               {sortedScores.length === 0 && (
                 <tr>
-                  <td colSpan={7 + columns.length} className="px-6 py-16 text-center">
-                     <p className="text-gray-400 font-medium">No marks data exists.</p>
+                  <td colSpan={7 + columns.length} className="px-6 py-16 text-center text-slate-500 font-medium">
+                    No marks data uploaded yet.
                   </td>
                 </tr>
               )}

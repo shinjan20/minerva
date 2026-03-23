@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import AuthLayout from "@/components/AuthLayout";
+import { fireConfetti } from "@/lib/confetti";
 
 function StudentRegistrationForm() {
   const router = useRouter();
@@ -103,6 +104,7 @@ function StudentRegistrationForm() {
       
       if (res.ok) {
         setRegistrationComplete(true);
+        fireConfetti();
       } else {
         toast.error(data.error || "Verification failed. Check your OTP.");
       }
@@ -235,28 +237,29 @@ function StudentRegistrationForm() {
 
       {/* Congratulatory Full-Screen Modal */}
       {registrationComplete && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-fade-in text-center">
-          <div className="bg-white/95 backdrop-blur-3xl rounded-[2rem] shadow-2xl p-10 flex flex-col items-center justify-center animate-scale-up border border-slate-200 max-w-md w-full relative overflow-hidden">
-            {/* Celebration flair */}
-            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-emerald-600"></div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-xl p-4 animate-fade-in text-center">
+          <div className="bg-white/[0.06] border border-white/[0.1] backdrop-blur-3xl rounded-3xl shadow-[0_40px_100px_rgba(0,0,0,0.8)] p-10 flex flex-col items-center justify-center animate-scale-up max-w-md w-full relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/60 to-transparent" />
             
-            <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-8 shadow-inner border border-green-100 relative group">
-               <div className="absolute inset-0 bg-green-400/30 blur-2xl animate-pulse rounded-full"></div>
-               <svg className="w-12 h-12 text-green-600 relative z-10 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-               </svg>
+            <div className="relative w-24 h-24 mb-6">
+              <div className="absolute inset-0 bg-emerald-400/30 blur-2xl animate-pulse rounded-full" />
+              <div className="relative w-full h-full rounded-3xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+                <svg className="w-12 h-12 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
             </div>
             
-            <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-3">Welcome to Minerva!</h3>
-            <p className="text-base text-gray-500 font-medium leading-relaxed">
-              Congratulations, <span className="text-gray-900 font-bold">{studentInfo?.name}</span>. Your institutional identity is verified and your academic profile is fully synchronized for this term.
+            <h3 className="text-3xl font-black text-white tracking-tight mb-3" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Welcome to Minerva!</h3>
+            <p className="text-slate-400 leading-relaxed text-sm">
+              Congratulations, <span className="text-white font-bold">{studentInfo?.name}</span>. Your identity is verified and your academic profile is synced for this term.
             </p>
             
             <button
               onClick={() => router.push("/dashboard")}
-              className="mt-10 w-full py-4 px-6 bg-gray-900 text-white text-lg font-bold rounded-xl shadow-lg hover:bg-gray-800 hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all flex justify-center items-center gap-2"
+              className="mt-8 w-full py-3.5 px-6 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-[0_0_24px_rgba(124,58,237,0.4)] hover:shadow-[0_0_36px_rgba(124,58,237,0.6)] transition-all flex justify-center items-center gap-2"
             >
-              Enter Dashboard &rarr;
+              Enter Dashboard →
             </button>
           </div>
         </div>

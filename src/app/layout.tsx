@@ -1,9 +1,6 @@
 import type { Metadata } from 'next';
-import { Outfit } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
-
-const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' });
 
 export const metadata: Metadata = {
   title: "Minerva | IIML Academic Portal",
@@ -17,38 +14,33 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${outfit.variable} font-sans bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-50 via-gray-100 to-slate-200 text-slate-900 min-h-screen selection:bg-primary/30 selection:text-primary`}>
+      <body>
         {children}
-        <Toaster 
-          position="top-right" 
+        <Toaster
+          position="top-center"
           toastOptions={{
             duration: 4000,
             style: {
-              background: 'rgba(15, 23, 42, 0.8)', // slate-900 80%
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              color: '#fff',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '16px',
-              padding: '16px 24px',
+              background: 'rgba(10, 10, 25, 0.95)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              color: '#e2e8f3',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '14px',
+              padding: '14px 20px',
               fontWeight: 500,
-              boxShadow: '0 10px 40px -10px rgba(0,0,0,0.5)',
+              fontSize: '14px',
+              boxShadow: '0 20px 60px -10px rgba(0,0,0,0.7), 0 0 0 1px rgba(124,58,237,0.1)',
             },
             success: {
-              iconTheme: {
-                primary: '#10b981',
-                secondary: '#ffffff',
-              },
+              iconTheme: { primary: '#34d399', secondary: '#000' },
             },
             error: {
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#ffffff',
-              },
+              iconTheme: { primary: '#f87171', secondary: '#000' },
             },
-          }} 
+          }}
         />
       </body>
     </html>
-  )
+  );
 }

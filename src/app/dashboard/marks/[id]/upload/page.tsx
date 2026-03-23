@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import LoadingPopup from "@/components/LoadingPopup";
+import { fireConfetti } from "@/lib/confetti";
 
 
 export default function MarksUploadPage({ params }: { params: { id: string } }) {
@@ -104,6 +105,7 @@ export default function MarksUploadPage({ params }: { params: { id: string } }) 
         toast.error("Re-upload detected. Security OTP sent to Office Staff.");
       } else if (res.ok) {
         toast.success(data.message || `Successfully ingested ${data.insertedRows} scores!`);
+        fireConfetti();
         setShowOtpModal(false);
         setOtp("");
         router.push(`/dashboard/marks/${params.id}`);
