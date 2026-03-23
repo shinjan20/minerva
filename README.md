@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Minerva - IIML Academic Portal (MVP v2.0)
+A dynamic, sleek, role-based Next.js application for securely managing college examination marks, configuring scoring breakpoints, processing PDF/XLSX uploads, tracking multi-stage approval audit logs, and rendering comprehensive points tables.
 
-## Getting Started
+## 🚀 Tech Stack
+- Frontend: Next.js 14 App Router, Tailwind CSS, Lucide Icons, React Hot Toast
+- Backend API: Next.js Edge APIs
+- Authentication: `jose` Edge-compatible JWT stored in HTTP-Only Cookies
+- File Parsing: `xlsx` library
+- Email Transport: `nodemailer` (Mocks to terminal automatically without credentials)
+- Database: Supabase PostgreSQL (Fully relational with schema validations)
 
-First, run the development server:
-
+## 🛠️ Step 1: Initialization & Running Locally
+Ensure you have `Node.js 18+`. Then:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Copy the `.env.local` template (already provided) and populate it with your Supabase keys:
+```bash
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Connect your Supabase instance by running the schema logic defined in `supabase/migrations/01_schema.sql` inside the Supabase *SQL Editor*.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Start the development server:
+```bash
+npm run dev
+```
 
-## Learn More
+## 🌱 Step 2: Database Seeding
+To immediately populate realistic data (an Admin office user, 1 active CR, 1 pending CR, 10 fully registered Students in a sample Course w/ Breakdowns):
+```bash
+node seed.ts
+```
+_Login with:_ `office@iiml.ac.in` | Password: `@IIM`
 
-To learn more about Next.js, take a look at the following resources:
+## 🗂️ Project Structure Overview
+- `/src/lib/auth.ts`: Central JWT Authentication Logic
+- `/src/middleware.ts`: Secures routes utilizing RBAC methodology
+- `/src/app/api`: All backend microservices mapped route-to-route
+- `/src/app/dashboard/*`: Authenticated User Experience containing:
+  - **Courses**: Create strict batch mappings for classes
+  - **Admin/CR**: Approve and track incoming Class Representative applications
+  - **Marks**: Granular CSV uploading w/ dynamic Conflict and Validation layers.
+  - **Audit Log**: Immutable Trail exportable directly out as XLSX
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🧪 Important Design Choices & Architecture
+- **JWT Integrity**: Token-based strategy leveraging robust `jose` to ensure edge-networking runtime compatibility and eliminate scaling dependencies. Let Supabase securely handle backend state and raw REST validation.
+- **Marks Data Normalization**: Avoids massive schema changes down the road. All uploaded scores are pushed into single relation logic and dynamically snapshotted for ranking.
+- **Zero-Trust Logic**: OTP system intercepts every single "Re-Upload" request forced by a Class Representative, isolating the request and demanding synchronous approval validation natively via email verification loops. 
+# minerva
