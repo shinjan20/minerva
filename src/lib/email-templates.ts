@@ -201,3 +201,77 @@ export function generateRegistrationSuccessEmail(name: string): string {
 </html>
   `;
 }
+
+export function generateScorecardFinalizedEmail(
+  studentName: string, 
+  courseName: string, 
+  finalGrade: string, 
+  componentsHtml: string
+): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+    .header { background-color: #0f172a; padding: 32px 40px; text-align: center; border-bottom: 4px solid #6b21a8; }
+    .logo { color: #ffffff; font-size: 24px; font-weight: 700; letter-spacing: 2px; margin: 0; }
+    .logo-sub { color: #94a3b8; font-size: 14px; margin-top: 4px; font-weight: 500; }
+    .content { padding: 40px; color: #334155; line-height: 1.6; }
+    .title { font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 24px; margin-top: 0; }
+    .accent { color: #6b21a8; }
+    .grade-box { background-color: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; text-align: center; margin: 32px 0; }
+    .grade-label { font-size: 14px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 8px; }
+    .grade-value { font-size: 48px; font-weight: 900; color: #6b21a8; margin: 0; line-height: 1; }
+    .components-table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+    .components-table th { background-color: #f8fafc; padding: 12px; text-align: left; font-size: 13px; text-transform: uppercase; color: #64748b; border-bottom: 2px solid #e2e8f0; }
+    .components-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 15px; color: #0f172a; font-weight: 500;}
+    .components-table tr:last-child td { border-bottom: none; }
+    .btn { display: inline-block; background-color: #6b21a8; color: #ffffff; font-weight: 600; text-decoration: none; padding: 12px 24px; border-radius: 6px; margin-top: 24px; }
+    .footer { background-color: #f8fafc; padding: 24px 40px; text-align: center; border-top: 1px solid #e2e8f0; }
+    .footer-text { font-size: 13px; color: #64748b; margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 class="logo">MINERVA</h1>
+      <div class="logo-sub">IIM LUCKNOW ACADEMIC PORTAL</div>
+    </div>
+    <div class="content">
+      <h2 class="title">Scorecard Finalized: <span class="accent">\${courseName}</span></h2>
+      <p>Hello <strong>\${studentName}</strong>,</p>
+      <p>Your instructor has permanently finalized and released the scorecards for <strong>\${courseName}</strong>. Your performance metrics and exact component breakdown are now available in your academic dashboard.</p>
+      
+      <div class="grade-box">
+        <div class="grade-label">Final Grade Earned</div>
+        <div class="grade-value">\${finalGrade}</div>
+      </div>
+      
+      <p style="font-weight: 600; margin-bottom: 8px; color: #0f172a;">Your Component Breakdown:</p>
+      <table class="components-table">
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th style="text-align: right;">Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          \${componentsHtml}
+        </tbody>
+      </table>
+      
+      <div style="text-align: center; margin-top: 32px;">
+        <a href="\${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/scorecard" class="btn" style="color: white !important;">View Full Scorecard</a>
+      </div>
+    </div>
+    <div class="footer">
+      <p class="footer-text">This is an automated academic notification. Please do not reply directly to this email.</p>
+      <p class="footer-text">&copy; \${new Date().getFullYear()} Minerva - IIM Lucknow. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
