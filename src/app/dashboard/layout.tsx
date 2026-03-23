@@ -22,8 +22,8 @@ export default async function DashboardLayout({
       <aside className="w-full md:w-72 bg-white/70 backdrop-blur-xl border-r border-gray-200/60 flex-shrink-0 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)] z-10 flex flex-col">
         <div className="h-20 flex items-center px-8 border-b border-gray-100/80 gap-4 bg-white/40">
           <img 
-            src="/iiml-logo.png" 
-            alt="IIML Logo" 
+            src="/minerva_logo.png" 
+            alt="Minerva Logo" 
             className="h-12 w-auto drop-shadow-sm hover:scale-105 transition-transform"
           />
           <div className="flex flex-col justify-center">
