@@ -340,9 +340,9 @@ export default function MarksUploadPage({ params }: { params: { id: string } }) 
                         {previewData.columns.map((col: any, idx: number) => {
                           const score = row.components[col.name];
                           return (
-                            <td key={idx} className="px-8 py-6 whitespace-nowrap text-right">
+                             <td key={idx} className="px-8 py-6 whitespace-nowrap text-right">
                                <span className={`text-sm font-black font-mono ${score === "AB" ? "text-red-400" : "text-white"}`}>
-                                 {score === "AB" ? "AB" : score ?? "—"}
+                                 {col.name === "Total" ? (row.total?.toFixed(2) || "0.00") : (score === "AB" ? "AB" : score ?? "—")}
                                </span>
                             </td>
                           );

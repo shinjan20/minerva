@@ -2,8 +2,16 @@ import "@/lib/pdf-polyfill";
 import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabase";
 import * as xlsx from "xlsx";
-const pdfParseLib = require("pdf-parse");
-const pdfParseFn: (buf: Buffer) => Promise<any> = typeof pdfParseLib === 'function' ? pdfParseLib : pdfParseLib.default;
+let pdfParseFn: any;
+try {
+    const pdfParseLib = require("pdf-parse");
+    pdfParseFn = pdfParseLib;
+    if (typeof pdfParseFn !== 'function' && pdfParseFn?.default) {
+        pdfParseFn = pdfParseFn.default;
+    }
+} catch (e) {
+    console.error("Critical: pdf-parse failed to load/require", e);
+}
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { getSession } from "@/lib/auth";
@@ -35,6 +43,13 @@ export async function POST(
 
     // PDF Table Regex Scraping Pipeline - IIML Faculty Results Template
     if (fileName.endsWith(".pdf")) {
+       if (typeof pdfParseFn !== 'function') {
+           console.error("PDF Upload requested but pdfParseFn is not a function.");
+           return NextResponse.json({ 
+               error: "PDF parsing is currently unavailable on this server. Please convert your PDF to Excel (.xlsx) and try again.",
+               suggestion: "Download our Excel template for the best experience."
+           }, { status: 500 });
+       }
        const pdfData = await pdfParseFn(Buffer.from(buffer));
        const fullText = pdfData.text;
        const allLines = fullText.split("\n");
@@ -195,7 +210,7 @@ export async function POST(
         if (!colName) continue;
         
         const lowerName = colName.toLowerCase();
-        if (lowerName === "grade" || lowerName === "s.no" || lowerName === "s.no.") continue;
+        if (lowerName === "grade" || lowerName === "s.no" || lowerName === "s.no." || lowerName.replace(/\./g, "") === "total" || lowerName.replace(/\./g, "") === "total marks" || lowerName === "aggregate") continue;
 
         let compName = colName;
         let maxScore = 100; // Default baseline if not declared
@@ -331,7 +346,7 @@ export async function POST(
         });
 
         const pColumns = parsedComponents.map(c => ({ name: c.name, maxScore: c.maxScore }));
-        // Append Total column to metadata
+        // Append Total column to metadata - Frontend looks for EXACTLY "Total"
         pColumns.push({ name: "Total", maxScore: pColumns.reduce((s, c) => s + c.maxScore, 0) });
 
         return NextResponse.json({
@@ -437,6 +452,16 @@ export async function POST(
          max_score: scoreObj.max_score,
          status: scoreObj.status
       };
+    });
+
+    // Post-processing to calculate and inject 'Total' for aggregation engine
+    Object.values(groupedScores).forEach(group => {
+        const compValues = Object.values(group.marks_data).map((c: any) => typeof c === 'object' ? c.score : c);
+        const studentTotal = compValues.reduce((sum: number, val: any) => {
+            if (typeof val === 'number') return sum + val;
+            return sum;
+        }, 0);
+        group.marks_data["Total"] = studentTotal; // Key expected by aggregation.ts
     });
 
     const upsertPayload = Object.values(groupedScores);

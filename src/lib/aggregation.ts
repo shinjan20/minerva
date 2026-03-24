@@ -133,6 +133,7 @@ export async function runCourseAggregation(courseId: string) {
   if (results.length > 0) {
       const sortedTotals = results.map(r => r.total_weighted).sort((a,b) => a - b);
       const statMax = sortedTotals[sortedTotals.length - 1];
+      const statMin = sortedTotals[0];
       const statAvg = sortedTotals.reduce((a,b) => a + b, 0) / sortedTotals.length;
       
       let statMedian = 0;
@@ -150,6 +151,7 @@ export async function runCourseAggregation(courseId: string) {
               ...currentCutoffs,
               _meta_avg: parseFloat(statAvg.toFixed(2)),
               _meta_max: parseFloat(statMax.toFixed(2)),
+              _meta_min: parseFloat(statMin.toFixed(2)),
               _meta_median: parseFloat(statMedian.toFixed(2))
           }
       }).eq("id", breakup.id);

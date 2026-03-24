@@ -115,6 +115,12 @@ export async function GET() {
               finalTotal = typeof totalVal === 'object' ? totalVal.score : totalVal;
           } else if (studentMarkRow.total_marks !== undefined) {
               finalTotal = studentMarkRow.total_marks;
+          } else {
+              // FALLBACK: Simple sum of numeric components for real-time visibility
+              const numericScores = components.filter(c => typeof c.score === 'number').map(c => c.score);
+              if (numericScores.length > 0) {
+                  finalTotal = numericScores.reduce((a, b) => a + b, 0);
+              }
           }
       }
 
@@ -129,9 +135,10 @@ export async function GET() {
         total: finalTotal || 0,
         components: components,
         stats: {
-          avg: courseBreakup?.grade_cutoffs?._meta_avg || null,
-          max: courseBreakup?.grade_cutoffs?._meta_max || null,
-          median: courseBreakup?.grade_cutoffs?._meta_median || null,
+          avg: courseBreakup?.grade_cutoffs?._meta_avg ?? null,
+          max: courseBreakup?.grade_cutoffs?._meta_max ?? null,
+          median: courseBreakup?.grade_cutoffs?._meta_median ?? null,
+          min: courseBreakup?.grade_cutoffs?._meta_min ?? null,
         }
       };
     });

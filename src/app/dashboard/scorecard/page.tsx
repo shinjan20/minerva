@@ -13,7 +13,7 @@ type ScorecardDetails = {
   grade: string;
   total: number;
   components: { name: string; score: number; max: number; weight: number }[];
-  stats?: { avg: number | null, max: number | null, median: number | null };
+  stats?: { avg: number | null, max: number | null, median: number | null, min: number | null };
   credits?: number;
 };
 
@@ -28,7 +28,7 @@ const gradeToGP: Record<string, number> = {
 };
 
 function gradeColor(grade: string) {
-  if (!grade) return { ring: "border-slate-500/30", badge: "bg-slate-500/15 text-slate-300", bar: "from-slate-500 to-slate-400" };
+  if (!grade || grade === "N/A" || grade === "?") return { ring: "border-slate-500/30", badge: "bg-slate-500/15 text-slate-400 border border-slate-500/20", bar: "from-slate-500 to-slate-400" };
   const g = grade.toUpperCase();
   if (g.startsWith("A")) return { ring: "border-emerald-500/40", badge: "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30", bar: "from-emerald-500 to-teal-400" };
   if (g.startsWith("B")) return { ring: "border-blue-500/40", badge: "bg-blue-500/15 text-blue-300 border border-blue-500/30", bar: "from-blue-600 to-indigo-500" };
@@ -201,7 +201,9 @@ export default function ScorecardPage() {
                             <h3 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1">{card.courseName}</h3>
                             <span className="text-[9px] md:text-[10px] font-black text-slate-500 dark:text-slate-600 bg-slate-100 dark:bg-white/[0.05] px-2.5 py-1 rounded-lg md:rounded-xl border border-slate-200 dark:border-white/[0.05] uppercase tracking-widest whitespace-nowrap">{card.credits} Credits</span>
                         </div>
-                        <span className={`text-[13px] md:text-base font-black px-4 md:px-6 py-1.5 md:py-2 rounded-xl md:rounded-2xl shadow-md md:shadow-lg border uppercase tracking-wider text-center ${colors.badge}`}>{card.grade || "Waiting"}</span>
+                        <span className={`text-[13px] md:text-base font-black px-4 md:px-6 py-1.5 md:py-2 rounded-xl md:rounded-2xl shadow-md md:shadow-lg border uppercase tracking-wider text-center ${colors.badge}`}>
+                            {card.grade === "N/A" ? "Calculating" : (card.grade || "Waiting")}
+                        </span>
                       </div>
 
                       <div className="px-6 md:px-8 py-6 md:py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-10">
@@ -233,7 +235,7 @@ export default function ScorecardPage() {
                             <div className="pt-2">
                               <p className="text-[9px] md:text-[10px] uppercase tracking-widest font-black text-slate-700 dark:text-slate-600 mb-3 md:mb-4 px-1">Cohort Distribution</p>
                               <div className="grid grid-cols-3 gap-2 md:gap-3">
-                                {[["Avg", card.stats.avg, "text-slate-600 dark:text-slate-400"], ["Med", card.stats.median, "text-slate-600 dark:text-slate-400"], ["Best", card.stats.max, "text-emerald-600 dark:text-emerald-400"]].map(([label, val, cls]) => (
+                                {[["Avg", card.stats.avg, "text-slate-600 dark:text-slate-400"], ["Med", card.stats.median, "text-slate-600 dark:text-slate-400"], ["Min", card.stats.min, "text-slate-600 dark:text-slate-400"], ["Best", card.stats.max, "text-emerald-600 dark:text-emerald-400"]].map(([label, val, cls]) => (
                                   <div key={label as string} className="bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.04] rounded-xl md:rounded-2xl p-2.5 md:p-3.5 text-center shadow-inner">
                                     <p className="text-[8px] md:text-[9px] uppercase tracking-widest text-slate-500 dark:text-slate-600 font-black mb-1 md:mb-1.5">{label}</p>
                                     <p className={`text-[11px] md:text-sm font-black ${cls}`}>{val ?? "—"}</p>
