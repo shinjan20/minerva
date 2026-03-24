@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabase";
 import { getSession } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const session = await getSession();
@@ -25,12 +27,7 @@ export async function GET() {
       .single();
 
     const identity = rosterProfile || profile;
-
-    // 1. Fetch Student's Snapshot performance joined with Course details
-    const { data: snapshots } = await supabase
-      .from("marks_snapshot")
-      .select("*, courses(name, term, credits)")
-      .eq("student_id", session.id);
+    const studentSection = identity?.section;
 
     // 2. Fetch all raw marks for this student
     const rawId = identity?.student_id || "";
@@ -40,7 +37,7 @@ export async function GET() {
       .select("*, courses(name, term, credits)")
       .eq("pgpid", pgpid);
 
-    if ((!snapshots || snapshots.length === 0) && (!rawMarks || rawMarks.length === 0)) {
+    if (!rawMarks || rawMarks.length === 0) {
       return NextResponse.json({ scorecards: [] });
     }
 
@@ -55,90 +52,60 @@ export async function GET() {
       .from("score_breakup")
       .select("*");
 
-    // Process and synthesize
-    const courseIds = new Set<string>();
-    snapshots?.forEach(s => courseIds.add(s.course_id));
-    rawMarks?.forEach(m => courseIds.add(m.course_id));
-
-      const scorecards = Array.from(courseIds).map(courseId => {
-      const snap = (snapshots || []).find(s => s.course_id === courseId) || {};
-      const studentMarkRow = (rawMarks || []).find(m => m.course_id === courseId) || {};
-      
-      const courseObj = snap.courses || studentMarkRow.courses || {};
-      const courseName = courseObj.name || "Unknown Course";
-      const term = courseObj.term || 1;
-      const credits = courseObj.credits || 1.0;
-      
+    // 1. Fetch Student's Snapshot performance joined with Course details
+    // 4. Build final UI array mapping by unifying marks + stats
+    // Note: We no longer need marks_snapshot as we store everything in marks_data
+    const scorecards = rawMarks.map(m => {
+      const marksData = m.marks_data || {};
+      const courseId = m.course_id;
+      const courseObj = m.courses;
       const courseBreakup = breakups?.find(b => b.course_id === courseId);
-      const visibleComps = visibilityRules?.filter(v => v.course_id === courseId).map(v => v.component) || [];
-
-      // Map out visible components
-      const components: any[] = [];
-      let calculatedTotal = 0;
       
-      if (studentMarkRow && studentMarkRow.marks_data) {
-          Object.keys(studentMarkRow.marks_data).forEach(compName => {
-              const compLower = compName.toLowerCase();
-              if (compName === '_total' || compLower === 'total' || compLower === 'aggregate' || compLower === 'total marks') return;
-              
-              const isVisible = true; // Show all uploaded components as per user request
-              if (!isVisible) return;
-              
-              const comp = studentMarkRow.marks_data[compName];
-              let weight = 0;
-              if (compLower.includes("quiz") || compLower.includes("assignment")) weight = courseBreakup?.quiz_pct || 0;
-              else if (compLower.includes("midterm") || compLower.includes("mid term")) weight = courseBreakup?.midterm_pct || 0;
-              else if (compLower.includes("project") || compLower.includes("viva") || compLower.includes("group")) weight = courseBreakup?.project_pct || 0;
-              else if (compLower.includes("endterm") || compLower.includes("end term") || compLower.includes("end")) weight = courseBreakup?.endterm_pct || 0;
+      const componentKeys = Object.keys(marksData).filter(k => !k.startsWith("_"));
+      const components = componentKeys.map(k => {
+          const comp = marksData[k];
+          // Determine weight from breakup config if available
+          let weight = 0;
+          const kLower = k.toLowerCase();
+          if (kLower.includes("quiz")) weight = courseBreakup?.quiz_pct || 0;
+          else if (kLower.includes("mid")) weight = courseBreakup?.midterm_pct || 0;
+          else if (kLower.includes("project") || kLower.includes("viva")) weight = courseBreakup?.project_pct || 0;
+          else if (kLower.includes("end")) weight = courseBreakup?.endterm_pct || 0;
+          else if (kLower.includes("participation") || kLower === "cp") weight = courseBreakup?.cp_pct || 0;
 
-              components.push({
-                name: compName,
-                score: comp.score,
-                max: comp.max_score,
-                weight: weight
-              });
-          });
-      }
-
-      // Robust Total Discovery
-      let finalTotal = snap.total_weighted;
-      if (finalTotal === undefined || finalTotal === null || finalTotal === 0) {
-          // Look for any key that looks like a total in the raw marks data
-          const marksData = studentMarkRow.marks_data || {};
-          const totalKey = Object.keys(marksData).find(k => {
-              const l = k.toLowerCase();
-              return l === '_total' || l === 'total' || l === 'total marks' || l === 'aggregate';
-          });
-          
-          if (totalKey) {
-              const totalVal = marksData[totalKey];
-              finalTotal = typeof totalVal === 'object' ? totalVal.score : totalVal;
-          } else if (studentMarkRow.total_marks !== undefined) {
-              finalTotal = studentMarkRow.total_marks;
-          } else {
-              // FALLBACK: Simple sum of numeric components for real-time visibility
-              const numericScores = components.filter(c => typeof c.score === 'number').map(c => c.score);
-              if (numericScores.length > 0) {
-                  finalTotal = numericScores.reduce((a, b) => a + b, 0);
-              }
-          }
-      }
-
+          return {
+              name: k,
+              score: typeof comp === 'object' ? comp.score : comp,
+              max: typeof comp === 'object' ? comp.max_score : 100,
+              weight: weight,
+              status: typeof comp === 'object' ? comp.status : 'SCORED',
+              is_visible: true
+          };
+      });
+      
+      // Sort to put 'Total' at the top
+      components.sort((a, b) => {
+          if (a.name.toLowerCase() === 'total') return -1;
+          if (b.name.toLowerCase() === 'total') return 1;
+          return 0;
+      });
+      
       return {
-        courseName,
-        term,
-        credits,
-        rank: snap.rank || null,
-        section_rank: snap.section_rank || null,
-        rank_change: 0,
-        grade: snap.grade || "N/A",
-        total: finalTotal || 0,
+        courseId: courseId,
+        courseName: courseObj?.name || "Unknown",
+        term: courseObj?.term || 1,
+        credits: courseObj?.credits || 0,
+        grade: marksData["_grade"] || "N/A",
+        total: marksData["Total"] || marksData["_total"] || 0,
+        rank: marksData["_rank"] || null,
+        section_rank: marksData["_section_rank"] || null,
+        is_locked: courseBreakup?.is_locked || false,
         components: components,
         stats: {
-          avg: courseBreakup?.grade_cutoffs?._meta_avg ?? null,
-          max: courseBreakup?.grade_cutoffs?._meta_max ?? null,
-          median: courseBreakup?.grade_cutoffs?._meta_median ?? null,
-          min: courseBreakup?.grade_cutoffs?._meta_min ?? null,
+          avg: courseBreakup?.grade_cutoffs?.[`_meta_${studentSection}_avg`] ?? courseBreakup?.grade_cutoffs?._meta_avg ?? null,
+          max: courseBreakup?.grade_cutoffs?.[`_meta_${studentSection}_max`] ?? courseBreakup?.grade_cutoffs?._meta_max ?? null,
+          median: courseBreakup?.grade_cutoffs?.[`_meta_${studentSection}_median`] ?? courseBreakup?.grade_cutoffs?._meta_median ?? null,
+          min: courseBreakup?.grade_cutoffs?.[`_meta_${studentSection}_min`] ?? courseBreakup?.grade_cutoffs?._meta_min ?? null,
         }
       };
     });

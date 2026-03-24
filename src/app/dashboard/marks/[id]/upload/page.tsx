@@ -11,6 +11,7 @@ export default function MarksUploadPage({ params }: { params: { id: string } }) 
   const router = useRouter();
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [breakupEnabled, setBreakupEnabled] = useState(false);
   
   const [scores, setScores] = useState<any[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
@@ -30,7 +31,24 @@ export default function MarksUploadPage({ params }: { params: { id: string } }) 
   useEffect(() => {
     fetchCourseInfo();
     fetchTable();
+    checkBreakup();
   }, [params.id]);
+
+  const checkBreakup = async () => {
+    try {
+      const res = await fetch(`/api/courses/${params.id}/breakup`);
+      const data = await res.json();
+      if (res.ok && data.breakup) {
+        const b = data.breakup;
+        const sum = Number(b.quiz_pct) + Number(b.midterm_pct) + Number(b.project_pct) + Number(b.endterm_pct) + Number(b.cp_pct);
+        if (Math.abs(sum - 100) < 0.1) {
+          setBreakupEnabled(true);
+        }
+      }
+    } catch (err) {
+      console.error("Breakup check failed", err);
+    }
+  };
 
   const fetchTable = async () => {
     try {
@@ -200,57 +218,89 @@ export default function MarksUploadPage({ params }: { params: { id: string } }) 
         </div>
       </div>
 
-      {/* STEP 1: UPLOAD */}
+      {/* STEP 1: UPLOAD / CONFIGURATION CHECK */}
       {step === 1 && (
-        <div className="bg-white/[0.02] border border-white/[0.06] backdrop-blur-3xl rounded-[2.5rem] p-12 shadow-2xl relative overflow-hidden group">
-          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-50 group-hover:opacity-100 transition-opacity"></div>
-          <form onSubmit={handlePreview} className="space-y-10 relative z-10">
-            <div className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2">Select Upload File</label>
-              <div className="flex justify-center px-10 pt-12 pb-14 border-2 border-white/5 border-dashed rounded-[2rem] bg-white/[0.01] hover:bg-blue-600/[0.03] hover:border-blue-500/30 transition-all group/upload cursor-pointer relative overflow-hidden">
-                 <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-transparent opacity-0 group-hover/upload:opacity-100 transition-opacity pointer-events-none"></div>
-                <div className="space-y-6 text-center relative z-10">
-                  <div className="p-8 bg-white/[0.03] rounded-3xl border border-white/5 shadow-inner group-hover/upload:scale-110 transition-transform duration-500">
-                    <svg className="h-16 w-16 text-slate-600 group-hover/upload:text-blue-400 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                  <div className="flex text-sm text-slate-400 justify-center">
-                    <label className="relative cursor-pointer bg-white text-blue-600 px-8 py-3.5 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-[0_8px_25px_rgba(255,255,255,0.1)] hover:shadow-white/20 transition-all focus-within:outline-none hover:scale-105 active:scale-95">
-                      <span>Choose Excel or PDF File</span>
-                      <input type="file" required accept=".xlsx,.xls,.csv,application/pdf,.pdf" className="sr-only" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-                    </label>
-                  </div>
-                  <p className="text-[10px] text-slate-600 font-black uppercase tracking-[0.15em]">Supports Excel spreadsheets and scanned PDF marks sheets.</p>
-                  
-                  {file && <div className="mt-8 py-5 px-10 bg-blue-500/10 border border-blue-500/20 rounded-2xl inline-block animate-fade-in-up shadow-[0_0_20px_rgba(59,130,246,0.05)]">
-                     <p className="text-[11px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-3">
-                       <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
-                       File Attached: {file.name} ({(file.size / 1024).toFixed(1)} KB)
-                     </p>
-                  </div>}
+        <>
+          {!breakupEnabled ? (
+            <div className="bg-red-500/5 border border-red-500/20 backdrop-blur-3xl rounded-[2.5rem] p-16 shadow-2xl relative overflow-hidden group animate-fade-in">
+              <div className="absolute top-0 inset-x-0 h-1 bg-red-600 opacity-50"></div>
+              <div className="flex flex-col items-center text-center space-y-8">
+                <div className="w-24 h-24 rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shadow-[0_0_30px_rgba(239,68,68,0.1)]">
+                   <svg className="w-12 h-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                   </svg>
+                </div>
+                <div className="space-y-4">
+                  <h2 className="text-3xl font-black text-white tracking-tighter uppercase">Configuration Required</h2>
+                  <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest max-w-md mx-auto leading-loose">
+                    Security Policy Violation: You cannot ingest marks until the <strong className="text-red-400">Component Breakup</strong> (Weightage) has been officially defined for this module.
+                  </p>
+                </div>
+                <div className="pt-4 flex gap-4">
+                  <button onClick={() => router.back()} className="px-8 py-4 bg-white/[0.05] border border-white/[0.1] text-slate-400 font-black rounded-2xl text-[10px] uppercase tracking-widest hover:text-white transition-all">
+                    Dismiss
+                  </button>
+                  <button 
+                    onClick={() => router.push(`/dashboard/courses/${params.id}/breakup`)}
+                    className="px-10 py-4 bg-red-600 text-white font-black rounded-2xl shadow-[0_12px_24px_rgba(220,38,38,0.3)] hover:scale-105 active:scale-95 transition-all uppercase tracking-widest text-[10px]"
+                  >
+                    Configure Now
+                  </button>
                 </div>
               </div>
             </div>
+          ) : (
+            <div className="bg-white/[0.02] border border-white/[0.06] backdrop-blur-3xl rounded-[2.5rem] p-12 shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-50 group-hover:opacity-100 transition-opacity"></div>
+              <form onSubmit={handlePreview} className="space-y-10 relative z-10">
+                <div className="space-y-4">
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2">Select Upload File</label>
+                  <div className="flex justify-center px-10 pt-12 pb-14 border-2 border-white/5 border-dashed rounded-[2rem] bg-white/[0.01] hover:bg-blue-600/[0.03] hover:border-blue-500/30 transition-all group/upload cursor-pointer relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-transparent opacity-0 group-hover/upload:opacity-100 transition-opacity pointer-events-none"></div>
+                    <div className="space-y-6 text-center relative z-10">
+                      <div className="p-8 bg-white/[0.03] rounded-3xl border border-white/5 shadow-inner group-hover/upload:scale-110 transition-transform duration-500">
+                        <svg className="h-16 w-16 text-slate-600 group-hover/upload:text-blue-400 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                          <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+                      <div className="flex text-sm text-slate-400 justify-center">
+                        <label className="relative cursor-pointer bg-white text-blue-600 px-8 py-3.5 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-[0_8px_25px_rgba(255,255,255,0.1)] hover:shadow-white/20 transition-all focus-within:outline-none hover:scale-105 active:scale-95">
+                          <span>Choose Excel or PDF File</span>
+                          <input type="file" required accept=".xlsx,.xls,.csv,application/pdf,.pdf" className="sr-only" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+                        </label>
+                      </div>
+                      <p className="text-[10px] text-slate-600 font-black uppercase tracking-[0.15em]">Supports Excel spreadsheets and scanned PDF marks sheets.</p>
+                      
+                      {file && <div className="mt-8 py-5 px-10 bg-blue-500/10 border border-blue-500/20 rounded-2xl inline-block animate-fade-in-up shadow-[0_0_20px_rgba(59,130,246,0.05)]">
+                         <p className="text-[11px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-3">
+                           <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+                           File Attached: {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                         </p>
+                      </div>}
+                    </div>
+                  </div>
+                </div>
 
-            <div className="pt-10 flex items-center justify-end gap-6">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="py-4 px-10 bg-white/[0.05] border border-white/[0.08] rounded-2xl text-[11px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-all hover:scale-105"
-              >
-                Go Back
-              </button>
-              <button
-                type="submit"
-                disabled={uploading || !file}
-                className="py-4 px-12 bg-blue-600 text-white rounded-2xl shadow-[0_12px_30px_rgba(37,99,235,0.3)] text-[11px] font-black uppercase tracking-[0.2em] transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
-              >
-                {uploading ? "Processing..." : "Preview Marks"}
-              </button>
+                <div className="pt-10 flex items-center justify-end gap-6">
+                  <button
+                    type="button"
+                    onClick={() => router.back()}
+                    className="py-4 px-10 bg-white/[0.05] border border-white/[0.08] rounded-2xl text-[11px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-all hover:scale-105"
+                  >
+                    Go Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={uploading || !file}
+                    className="py-4 px-12 bg-blue-600 text-white rounded-2xl shadow-[0_12px_30px_rgba(37,99,235,0.3)] text-[11px] font-black uppercase tracking-[0.2em] transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                  >
+                    {uploading ? "Processing..." : "Preview Marks"}
+                  </button>
+                </div>
+              </form>
             </div>
-          </form>
-        </div>
+          )}
+        </>
       )}
 
       {/* STEP 2: REVIEW & VALIDATE */}
@@ -306,7 +356,7 @@ export default function MarksUploadPage({ params }: { params: { id: string } }) 
                     <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Student Name</th>
                     {previewData.columns.map((col: any, idx: number) => (
                       <th key={idx} className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] text-right">
-                        {col.name} <span className="text-[10px] text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md ml-1 uppercase">{col.maxScore}PT</span>
+                        {col.name} {col.name === "Total" && <span className="text-[10px] text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md ml-1 uppercase">{col.maxScore}PT</span>}
                       </th>
                     ))}
                   </tr>

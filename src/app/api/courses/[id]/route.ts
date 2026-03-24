@@ -13,6 +13,14 @@ export async function DELETE(
     }
 
     const supabase = getServiceSupabase();
+    
+    // 1. Delete dependent records first to handle FK constraints
+    await supabase.from("marks").delete().eq("course_id", params.id);
+    await supabase.from("marks_visibility").delete().eq("course_id", params.id);
+    await supabase.from("score_breakup").delete().eq("course_id", params.id);
+    await supabase.from("student_enrollment").delete().eq("course_id", params.id);
+
+    // 2. Delete the course itself
     const { error } = await supabase
       .from("courses")
       .delete()

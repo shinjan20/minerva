@@ -82,8 +82,8 @@ export default function MarksIndexPage() {
           <h1 className="text-xl sm:text-2xl md:text-4xl font-black tracking-tighter uppercase flex items-center gap-3 md:gap-4">
             <span className="w-1.5 md:w-2.5 h-8 md:h-12 bg-blue-600 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.8)]" />
             <div className="flex flex-wrap items-center gap-x-2 md:gap-x-3">
-              <span className="text-slate-900 dark:text-white">Marks &</span>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-indigo-600 dark:from-blue-400 dark:to-indigo-500">Points Table</span>
+            {session?.role === "OFFICE_STAFF" && <span className="text-slate-900 dark:text-white">Marks &</span>}
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-indigo-600 dark:from-blue-400 dark:to-indigo-500">Points Table</span>
             </div>
           </h1>
           <p className="text-[8px] md:text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-[0.15em] md:tracking-[0.2em] opacity-80 pl-4 md:pl-5">Institutional Marks Management · Bi-Directional Ledger Sync</p>
@@ -147,18 +147,20 @@ export default function MarksIndexPage() {
             <div className="px-6 md:px-8 py-6 md:py-8 border-t border-slate-100 dark:border-white/[0.05] bg-slate-50/50 dark:bg-white/[0.01] flex flex-col gap-3 md:gap-4">
               <Link 
                 href={`/dashboard/marks/${course.id}`} 
-                className="w-full flex justify-center items-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 border border-slate-200 dark:border-white/[0.1] shadow-sm dark:shadow-xl text-[10px] md:text-[11px] font-black uppercase tracking-widest rounded-xl md:rounded-2xl text-slate-600 dark:text-slate-300 bg-white dark:bg-white/[0.05] hover:bg-slate-50 dark:hover:bg-white/[0.1] hover:text-blue-600 dark:hover:text-white transition-all hover:scale-[1.02] active:scale-95"
+                className={`w-full flex justify-center items-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 border border-slate-200 dark:border-white/[0.1] shadow-sm dark:shadow-xl text-[10px] md:text-[11px] font-black uppercase tracking-widest rounded-xl md:rounded-2xl text-slate-600 dark:text-slate-300 bg-white dark:bg-white/[0.05] hover:bg-slate-50 dark:hover:bg-white/[0.1] hover:text-blue-600 dark:hover:text-white transition-all hover:scale-[1.02] active:scale-95 ${session?.role !== "OFFICE_STAFF" ? "col-span-full" : ""}`}
               >
                 <BarChart3 className="w-4 h-4 text-blue-500/50" />
                 View Points Table
               </Link>
-              <Link 
-                href={`/dashboard/marks/${course.id}/upload`} 
-                className="w-full flex justify-center items-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 border border-transparent shadow-lg dark:shadow-[0_12px_24px_rgba(37,99,235,0.25)] text-[10px] md:text-[11px] font-black uppercase tracking-widest rounded-xl md:rounded-2xl text-white bg-blue-600 hover:bg-blue-500 transition-all hover:scale-[1.02] active:scale-95"
-              >
-                <ScrollText className="w-4 h-4 text-white/50" />
-                Upload Data
-              </Link>
+              {session?.role === "OFFICE_STAFF" && (
+                <Link 
+                  href={`/dashboard/marks/${course.id}/upload`} 
+                  className="w-full flex justify-center items-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 border border-transparent shadow-lg dark:shadow-[0_12px_24px_rgba(37,99,235,0.25)] text-[10px] md:text-[11px] font-black uppercase tracking-widest rounded-xl md:rounded-2xl text-white bg-blue-600 hover:bg-blue-500 transition-all hover:scale-[1.02] active:scale-95"
+                >
+                  <ScrollText className="w-4 h-4 text-white/50" />
+                  Upload Data
+                </Link>
+              )}
             </div>
           </div>
         ))}

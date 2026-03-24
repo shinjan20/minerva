@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import LoadingPopup from "@/components/LoadingPopup";
 import toast from "react-hot-toast";
-import { BookOpen, LayoutDashboard, BarChart3, Lock, Unlock, Send } from "lucide-react";
+import { BookOpen, LayoutDashboard, BarChart3, Lock, Unlock, Send, Trash2 } from "lucide-react";
+import ConfirmModal from "@/components/ConfirmModal";
 
 type Course = {
   id: string;
@@ -20,6 +22,7 @@ type TermStatus = {
 };
 
 export default function CoursesPage() {
+  const router = useRouter();
   const [courses, setCourses] = useState<(Course & { term: number, credits: number })[]>([]);
   const [termStatuses, setTermStatuses] = useState<TermStatus[]>([]);
   const [role, setRole] = useState("STUDENT");
@@ -32,6 +35,8 @@ export default function CoursesPage() {
   const [credits, setCredits] = useState("1.0");
   const [creating, setCreating] = useState(false);
   const [lockingTerm, setLockingTerm] = useState<number | null>(null);
+  const [deletingCourse, setDeletingCourse] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchCourses();
@@ -92,6 +97,11 @@ export default function CoursesPage() {
         toast.success("Course created and enrolled in Minerva");
         setName("");
         fetchCourses();
+        
+        const courseId = data.id || data.courseId;
+        if (courseId && confirm("Step 2: Component Breakup Required. Would you like to configure grading weights now? (This is mandatory before marks can be uploaded)")) {
+            router.push(`/dashboard/courses/${courseId}/breakup`);
+        }
       } else {
         toast.error(data.error || "Creation failed");
         if (data.details) toast(data.details, { icon: 'ℹ️' });
@@ -121,6 +131,26 @@ export default function CoursesPage() {
         toast.error("Network error during term lock");
     } finally {
         setLockingTerm(null);
+    }
+  };
+
+  const handleDeleteCourse = async () => {
+    if (!deletingCourse) return;
+    setIsDeleting(true);
+    try {
+        const res = await fetch(`/api/courses/${deletingCourse}`, { method: "DELETE" });
+        if (res.ok) {
+            toast.success("Course and all associated data purged successfully");
+            fetchCourses();
+        } else {
+            const data = await res.json();
+            toast.error(data.error || "Deletion failed");
+        }
+    } catch (err) {
+        toast.error("Network error during deletion");
+    } finally {
+        setIsDeleting(false);
+        setDeletingCourse(null);
     }
   };
 
@@ -296,13 +326,24 @@ export default function CoursesPage() {
                     </td>
                     <td className="px-10 py-8 whitespace-nowrap text-right">
                     {role === "OFFICE_STAFF" ? (
-                        <a 
-                            href={`/dashboard/courses/${course.id}/breakup`} 
-                            className={`inline-flex items-center gap-3 px-6 py-3 border rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${locked ? "bg-slate-100 dark:bg-white/[0.02] border-slate-200 dark:border-white/[0.05] text-slate-400 cursor-not-allowed" : "bg-white dark:bg-white/[0.05] border-slate-200 dark:border-white/[0.1] hover:border-blue-500/50 hover:bg-blue-600/5 dark:hover:bg-blue-600/10 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white shadow-sm dark:shadow-xl hover:scale-105"}`}
-                            onClick={(e) => locked && e.preventDefault()}
-                        >
-                            {locked ? "Locked" : "Set Components"} {locked ? <Lock className="w-3 h-3 text-emerald-600/50 dark:text-emerald-400/50" /> : <LayoutDashboard className="w-3 h-3 text-blue-600/50 dark:text-blue-500/50" />}
-                        </a>
+                        <div className="flex items-center justify-end gap-3">
+                            <a 
+                                href={`/dashboard/courses/${course.id}/breakup`} 
+                                className={`inline-flex items-center gap-3 px-6 py-3 border rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${locked ? "bg-slate-100 dark:bg-white/[0.02] border-slate-200 dark:border-white/[0.05] text-slate-400 cursor-not-allowed" : "bg-white dark:bg-white/[0.05] border-slate-200 dark:border-white/[0.1] hover:border-blue-500/50 hover:bg-blue-600/5 dark:hover:bg-blue-600/10 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white shadow-sm dark:shadow-xl hover:scale-105"}`}
+                                onClick={(e) => locked && e.preventDefault()}
+                            >
+                                {locked ? "Locked" : "Set Components"} {locked ? <Lock className="w-3 h-3 text-emerald-600/50 dark:text-emerald-400/50" /> : <LayoutDashboard className="w-3 h-3 text-blue-600/50 dark:text-blue-500/50" />}
+                            </a>
+                            {!locked && (
+                                <button
+                                    onClick={() => setDeletingCourse(course.id)}
+                                    className="p-3 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500 text-red-500/70 hover:text-red-500 rounded-2xl transition-all shadow-sm hover:scale-105"
+                                    title="Delete Entire Course"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
                     ) : (
                         <a href={`/dashboard/marks/${course.id}`} className="inline-flex items-center gap-3 px-6 py-3 bg-white dark:bg-white/[0.05] border border-slate-200 dark:border-white/[0.1] hover:border-blue-500/50 hover:bg-blue-600/5 dark:hover:bg-blue-600/10 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm dark:shadow-xl hover:scale-105">
                             Interact Table <BarChart3 className="w-3 h-3 text-blue-600/50 dark:text-blue-500/50" />
@@ -320,6 +361,14 @@ export default function CoursesPage() {
             </div>
         )}
       </div>
+
+      <ConfirmModal 
+        isOpen={!!deletingCourse}
+        onClose={() => setDeletingCourse(null)}
+        onConfirm={handleDeleteCourse}
+        title="Delete Course Permanently"
+        message="Are you absolutely sure? This will permanently delete the course, all associated marks, component breakups, and historical logs. This action IS IRREVERSIBLE."
+      />
     </div>
   );
 }

@@ -67,6 +67,9 @@ export async function POST(request: Request) {
       .eq("id", user.id);
 
     if (updateErr) throw updateErr;
+    
+    // Link user_id in student_roster table to ensure aggregation engine can find them
+    await supabase.from("student_roster").update({ user_id: user.id }).eq("email", email);
 
     // Mark OTP used
     await supabase.from("cr_otp_registration").update({ used: true }).eq("id", record.id);

@@ -6,11 +6,13 @@ import toast from "react-hot-toast";
 import { ScrollText, CheckCircle2, ShieldCheck, Clock } from "lucide-react";
 
 type ScorecardDetails = {
+  courseId: string;
   courseName: string;
   rank: number | null;
   section_rank: number | null;
   rank_change: number;
   grade: string;
+  is_locked?: boolean;
   total: number;
   components: { name: string; score: number; max: number; weight: number }[];
   stats?: { avg: number | null, max: number | null, median: number | null, min: number | null };
@@ -22,6 +24,12 @@ type TermStatus = {
   is_locked: boolean;
   is_published: boolean;
 };
+
+function formatNumber(val: any) {
+  if (val === null || val === undefined || isNaN(val)) return "—";
+  const num = Number(val);
+  return num % 1 === 0 ? num.toString() : num.toFixed(2);
+}
 
 const gradeToGP: Record<string, number> = {
   "A+": 10, "A": 9, "A-": 8, "B+": 7, "B": 6, "B-": 5, "C+": 4, "C": 3, "C-": 2, "D": 1, "F": 0
@@ -46,7 +54,7 @@ export default function ScorecardPage() {
 
   const fetchScorecards = async () => {
     try {
-      const res = await fetch("/api/marks/me");
+      const res = await fetch(`/api/marks/me?t=${Date.now()}`);
       const data = await res.json();
       if (res.ok) {
         if (data.scorecards) setScorecards(data.scorecards);
@@ -109,44 +117,48 @@ export default function ScorecardPage() {
     <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 md:space-y-12 animate-fade-in-up font-[Orbitron]">
       
       {/* Header + Profile Card */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8">
-        <div className="flex flex-col">
-          <span className="text-[8px] md:text-[10px] font-black text-blue-600 dark:text-blue-400 tracking-[0.2em] md:tracking-[0.3em] uppercase">Academic Record</span>
-          <h1 className="mt-2 text-3xl md:text-5xl font-black tracking-tighter uppercase flex items-start md:items-center gap-3 md:gap-4">
-            <span className="w-1.5 md:w-2.5 h-10 md:h-14 bg-blue-600 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.8)] mt-1 md:mt-0" />
-            <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-10">
+        <div className="flex flex-col flex-1 min-w-0">
+          <span className="text-[8px] md:text-[9px] font-black text-blue-600 dark:text-blue-400 tracking-[0.2em] md:tracking-[0.3em] uppercase">Academic Record</span>
+          <h1 className="mt-2 text-2xl md:text-3xl lg:text-4xl font-black tracking-tighter uppercase flex flex-wrap items-center gap-2 md:gap-3">
+            <span className="w-1.5 md:w-2 h-8 md:h-10 bg-blue-600 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.8)]" />
+            <div className="flex items-center gap-2 md:gap-3 flex-wrap">
               <span className="text-slate-900 dark:text-white">Performance</span>
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">Scorecard</span>
             </div>
           </h1>
-          <p className="mt-4 text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest opacity-80 pl-4 md:pl-5">View your clinical grades, rankings, and cumulative performance metrics.</p>
+          <p className="mt-3 text-[8px] md:text-[9px] text-slate-500 font-bold uppercase tracking-widest opacity-80 pl-4 md:pl-5 max-w-xl">View your clinical grades, rankings, and cumulative performance metrics.</p>
         </div>
 
         {studentDetails && (
-          <div className="bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] backdrop-blur-3xl rounded-3xl md:rounded-[2.5rem] p-5 md:p-8 flex flex-col sm:flex-row items-center gap-6 md:gap-8 min-w-0 lg:min-w-[380px] shadow-sm dark:shadow-2xl relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="flex items-center gap-5 md:gap-8 w-full sm:w-auto">
+          <div className="bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] backdrop-blur-3xl rounded-3xl md:rounded-[2.5rem] p-5 md:p-7 flex flex-col sm:flex-row items-center gap-6 md:gap-10 w-full lg:w-auto lg:max-w-[550px] shadow-sm dark:shadow-2xl relative group flex-shrink-0">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-[2.5rem]" />
+            
+            {/* Left: Avatar + Name/Details */}
+            <div className="flex items-center gap-5 md:gap-6 flex-1 min-w-0 relative z-10">
               <div className="relative flex-shrink-0">
-                <div className="absolute inset-0 bg-blue-500/40 blur-2xl rounded-full scale-110 animate-pulse" />
+                <div className="absolute inset-0 bg-blue-500/30 blur-2xl rounded-full scale-110" />
                 <div className="relative w-12 h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg border border-white/20">
                   <span className="text-white font-black text-xl md:text-2xl">{studentDetails.name?.charAt(0)}</span>
                 </div>
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0">
                 <h3 className="font-black text-slate-900 dark:text-white text-base md:text-lg uppercase tracking-wider truncate">{studentDetails.name}</h3>
                 <p className="text-[11px] md:text-sm font-mono font-black text-blue-600 dark:text-blue-400 mt-1">{studentDetails.student_id}</p>
-                <div className="flex items-center gap-2 mt-3 md:mt-4 flex-wrap">
-                  <span className="text-[8px] md:text-[10px] uppercase tracking-widest font-black bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 px-2.5 py-1 md:px-3 md:py-1.5 rounded-lg md:rounded-xl border border-slate-200 dark:border-white/[0.05]">{studentDetails.batch}</span>
-                  <span className="text-[8px] md:text-[10px] uppercase tracking-widest font-black bg-blue-500/15 text-blue-600 dark:text-blue-300 px-2.5 py-1 md:px-3 md:py-1.5 rounded-lg md:rounded-xl border border-blue-500/20">Sec {studentDetails.section}</span>
+                <div className="flex items-center gap-2 mt-3 flex-wrap">
+                  <span className="text-[8px] md:text-[9px] uppercase tracking-widest font-black bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 px-2 py-1 rounded-lg border border-slate-200 dark:border-white/[0.05]">{studentDetails.batch}</span>
+                  <span className="text-[8px] md:text-[9px] uppercase tracking-widest font-black bg-blue-500/15 text-blue-600 dark:text-blue-300 px-2 py-1 rounded-lg border border-blue-500/20">Sec {studentDetails.section}</span>
                 </div>
               </div>
             </div>
-            <div className="flex flex-row sm:flex-col items-center justify-center border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-white/[0.1] pt-5 sm:pt-0 sm:pl-8 w-full sm:w-auto flex-shrink-0 gap-4 sm:gap-0">
-              <div className="flex flex-col items-center">
-                <span className="text-[8px] md:text-[9px] uppercase tracking-[.15em] md:tracking-[.2em] font-black text-slate-500 mb-1 md:mb-2">Cumulative GPA</span>
-                <span className="text-3xl md:text-4xl font-black text-emerald-600 dark:text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]">{cgpa}</span>
+
+            {/* Right: Cumulative GPA */}
+            <div className="flex flex-row sm:flex-col items-center justify-center border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-white/[0.1] pt-5 sm:pt-0 sm:pl-8 flex-shrink-0 relative z-10">
+              <div className="flex flex-col items-center sm:items-end">
+                <span className="text-[8px] md:text-[10px] uppercase tracking-widest font-black text-slate-500 dark:text-slate-400 mb-1">Cumulative GPA</span>
+                <span className="text-4xl md:text-5xl font-black text-emerald-500 dark:text-emerald-400 drop-shadow-[0_0_20px_rgba(16,185,129,0.4)]">{cgpa}</span>
+                <span className="text-[8px] md:text-[9px] text-slate-500 dark:text-slate-400 font-bold mt-1 tracking-widest uppercase">{totalCredits} Total Credits</span>
               </div>
-              <span className="text-[8px] md:text-[9px] text-slate-500 dark:text-slate-600 font-bold mt-1 md:mt-2 tracking-[.15em] md:tracking-[.2em] uppercase">{totalCredits} Total Credits</span>
             </div>
           </div>
         )}
@@ -181,7 +193,9 @@ export default function ScorecardPage() {
                   </div>
                 </div>
                 <div className="sm:text-right flex items-baseline sm:flex-col gap-3 sm:gap-1">
-                    <p className="text-[8px] md:text-[9px] uppercase tracking-[.2em] md:tracking-[.3em] font-black text-slate-400 dark:text-slate-600">Term GPA</p>
+                    <p className="text-[8px] md:text-[9px] uppercase tracking-[.2em] md:tracking-[0.3em] font-black text-slate-400 dark:text-slate-600">
+                        {status?.is_locked ? "Term GPA" : "Potential Term GPA"}
+                    </p>
                     <p className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{termData.gpa}</p>
                 </div>
               </div>
@@ -197,13 +211,32 @@ export default function ScorecardPage() {
 
                       {/* Course header */}
                       <div className="pl-6 md:pl-10 pr-6 md:pr-10 pt-6 md:pt-8 pb-5 md:pb-6 border-b border-slate-100 dark:border-white/[0.04] flex flex-col md:flex-row md:justify-between md:items-center bg-slate-50/30 dark:bg-white/[0.01] gap-4">
-                        <div className="flex items-center gap-4 md:gap-6">
-                            <h3 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1">{card.courseName}</h3>
-                            <span className="text-[9px] md:text-[10px] font-black text-slate-500 dark:text-slate-600 bg-slate-100 dark:bg-white/[0.05] px-2.5 py-1 rounded-lg md:rounded-xl border border-slate-200 dark:border-white/[0.05] uppercase tracking-widest whitespace-nowrap">{card.credits} Credits</span>
+                        <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
+                            <div className="flex items-center gap-4 md:gap-6">
+                                <h3 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1">
+                                    <span className="text-blue-600 dark:text-blue-400 mr-2 md:mr-3">{card.courseName}</span>
+                                </h3>
+                                <span className="text-[9px] md:text-[10px] font-black text-slate-500 dark:text-slate-600 bg-slate-100 dark:bg-white/[0.05] px-2.5 py-1 rounded-lg md:rounded-xl border border-slate-200 dark:border-white/[0.05] uppercase tracking-widest whitespace-nowrap">{card.credits} Credits</span>
+                            </div>
+                            {card.is_locked ? (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                                    <CheckCircle2 className="w-3 h-3" /> Locked
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                                    <Clock className="w-3 h-3" /> In Progress
+                                </span>
+                            )}
                         </div>
-                        <span className={`text-[13px] md:text-base font-black px-4 md:px-6 py-1.5 md:py-2 rounded-xl md:rounded-2xl shadow-md md:shadow-lg border uppercase tracking-wider text-center ${colors.badge}`}>
-                            {card.grade === "N/A" ? "Calculating" : (card.grade || "Waiting")}
-                        </span>
+                        <div className="flex flex-col items-center md:items-end gap-1">
+                            <span className={`text-[13px] md:text-base font-black px-4 md:px-6 py-1.5 md:py-2 rounded-xl md:rounded-2xl shadow-md md:shadow-lg border uppercase tracking-wider text-center ${colors.badge}`}>
+                                {card.grade === "N/A" ? "Calculating" : 
+                                 (!card.is_locked && card.grade !== "N/A" ? `Potential ${card.grade}` : (card.grade || "Waiting"))}
+                            </span>
+                            {card.grade && card.grade !== "N/A" && card.grade !== "Waiting" && (
+                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{card.is_locked ? "Final GPA" : "Draft Grade"}</p>
+                            )}
+                        </div>
                       </div>
 
                       <div className="px-6 md:px-8 py-6 md:py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-10">
@@ -226,7 +259,6 @@ export default function ScorecardPage() {
                             <p className="text-[8px] md:text-[9px] uppercase tracking-[.15em] md:tracking-[.2em] font-black text-slate-500 dark:text-slate-600 mb-1 md:mb-2">Final Score</p>
                             <div className="flex items-baseline gap-2">
                               <span className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white">{card.total.toFixed(2)}</span>
-                              <span className="text-slate-400 dark:text-slate-600 font-black text-lg md:text-xl tracking-tighter">/ 100.00</span>
                             </div>
                           </div>
 
@@ -238,7 +270,7 @@ export default function ScorecardPage() {
                                 {[["Avg", card.stats.avg, "text-slate-600 dark:text-slate-400"], ["Med", card.stats.median, "text-slate-600 dark:text-slate-400"], ["Min", card.stats.min, "text-slate-600 dark:text-slate-400"], ["Best", card.stats.max, "text-emerald-600 dark:text-emerald-400"]].map(([label, val, cls]) => (
                                   <div key={label as string} className="bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.04] rounded-xl md:rounded-2xl p-2.5 md:p-3.5 text-center shadow-inner">
                                     <p className="text-[8px] md:text-[9px] uppercase tracking-widest text-slate-500 dark:text-slate-600 font-black mb-1 md:mb-1.5">{label}</p>
-                                    <p className={`text-[11px] md:text-sm font-black ${cls}`}>{val ?? "—"}</p>
+                                    <p className={`text-[11px] md:text-sm font-black ${cls}`}>{formatNumber(val)}</p>
                                   </div>
                                 ))}
                               </div>
@@ -261,16 +293,17 @@ export default function ScorecardPage() {
                                     )}
                                   </div>
                                   <div className="flex items-baseline gap-1.5 md:gap-2">
-                                    <span className="font-black text-slate-900 dark:text-white text-base md:text-xl font-mono">{comp.score}</span>
-                                    <span className="text-slate-400 dark:text-slate-600 font-bold text-[9px] md:text-[10px] uppercase tracking-tighter">/ {comp.max}</span>
+                                    <span className="font-black text-slate-900 dark:text-white text-base md:text-xl font-mono">{formatNumber(comp.score)}</span>
                                   </div>
                                 </div>
-                                <div className="w-full bg-slate-100 dark:bg-white/[0.03] rounded-full h-2.5 md:h-3 overflow-hidden border border-slate-200 dark:border-white/[0.05] p-[2px] md:p-[3px]">
-                                  <div
-                                    className={`bg-gradient-to-r ${colors.bar} h-full rounded-full transition-all duration-1000 ease-out shadow-sm dark:shadow-[0_0_12px_rgba(0,0,0,0.5)]`}
-                                    style={{ width: `${comp.max > 0 ? (comp.score / comp.max) * 100 : 0}%`, animationDelay: `${i * 150}ms` }}
-                                  />
-                                </div>
+                                 {comp.name.toLowerCase() === 'total' && (
+                                   <div className="w-full bg-slate-100 dark:bg-white/[0.03] rounded-full h-2.5 md:h-3 overflow-hidden border border-slate-200 dark:border-white/[0.05] p-[2px] md:p-[3px]">
+                                     <div
+                                       className={`bg-gradient-to-r ${colors.bar} h-full rounded-full transition-all duration-1000 ease-out shadow-sm dark:shadow-[0_0_12px_rgba(0,0,0,0.5)]`}
+                                       style={{ width: `${comp.max > 0 ? (comp.score / comp.max) * 100 : 0}%`, animationDelay: `${i * 150}ms` }}
+                                     />
+                                   </div>
+                                 )}
                               </div>
                             ))}
                             {card.components.length === 0 && (

@@ -41,8 +41,6 @@ export default function MarksTablePage() {
   const [loading, setLoading] = useState(true);
   const [finalizing, setFinalizing] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
-  const [visibleComponents, setVisibleComponents] = useState<string[]>([]);
-  const [togglingVisibility, setTogglingVisibility] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [confirmFinalize, setConfirmFinalize] = useState(false);
 
@@ -60,21 +58,8 @@ export default function MarksTablePage() {
         setCourseName(data.courseName || "");
         setCourseTerm(data.courseTerm || "");
         setRole(data.role);
+        setRole(data.role);
         setIsLocked(data.is_locked || false);
-        
-        // Fetch current visibility state
-        const visRes = await fetch(`/api/visibility/${id}`); // Assuming a GET exists or I'll just use the courseId route
-        // Wait, I should check if I need to implement a GET for visibility or if it comes with the marks.
-        // The /api/marks/[courseId] route I checked doesn't return ALL visibility rules, only for the logged in student.
-        // But if I am OFFICE_STAFF, I want to see everything.
-      }
-      
-      if (data.role === "OFFICE_STAFF") {
-          const visRes = await fetch(`/api/visibility/${id}`);
-          if (visRes.ok) {
-              const visData = await visRes.json();
-              setVisibleComponents(visData.visibleComponents || []);
-          }
       }
     } catch (err) {
       toast.error("Failed to load marks matrix");
@@ -100,35 +85,6 @@ export default function MarksTablePage() {
     }
   };
 
-  const handleToggleVisibility = async (component: string) => {
-    if (isLocked) return;
-    const isVisible = visibleComponents.includes(component);
-    setTogglingVisibility(component);
-    
-    try {
-      const res = await fetch(`/api/visibility/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ component, isVisible: !isVisible })
-      });
-      
-      if (res.ok) {
-        if (!isVisible) {
-          setVisibleComponents(prev => [...prev, component]);
-          toast.success(`${component} released to students`);
-        } else {
-          setVisibleComponents(prev => prev.filter(c => c !== component));
-          toast.success(`${component} hidden from students`);
-        }
-      } else {
-        toast.error("Failed to update visibility");
-      }
-    } catch {
-      toast.error("Network error");
-    } finally {
-      setTogglingVisibility(null);
-    }
-  };
 
   const handleFinalize = async () => {
     setLoading(true);
@@ -219,9 +175,9 @@ export default function MarksTablePage() {
               </div>
               {courseName && (
                 <div className="mt-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-[11px] sm:text-lg md:text-2xl font-black tracking-tight md:tracking-tighter">
-                  <span className="text-blue-600 dark:text-blue-400 truncate max-w-[240px] sm:max-w-none">Subject : {courseName}</span>
+                  <span className="text-blue-600 dark:text-blue-400 truncate max-w-[200px] sm:max-w-none">Subject : {courseName}</span>
                   <span className="hidden sm:inline text-slate-300 dark:text-white/20">|</span>
-                  <span className="text-slate-500 dark:text-slate-400">Term : {courseTerm}</span>
+                  <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">Term : {courseTerm}</span>
                 </div>
               )}
             </div>
@@ -276,34 +232,13 @@ export default function MarksTablePage() {
                 <th className="px-3 md:px-6 py-4 text-left text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">Chg</th>
                 <th className="hidden md:table-cell px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">ID</th>
                 <th className="px-3 md:px-6 py-4 text-left text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">Name</th>
-                {columns.map(col => {
-                  const isVisible = visibleComponents.includes(col);
-                  return (
-                    <th key={col} className="px-3 md:px-6 py-4 text-left text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest group/col">
-                      <div className="flex items-center gap-2">
-                        {col}
-                        {role === "OFFICE_STAFF" && !isLocked && (
-                          <button
-                            onClick={() => handleToggleVisibility(col)}
-                            disabled={togglingVisibility === col}
-                            className={`p-1 rounded-md transition-all ${isVisible ? 'text-blue-500 bg-blue-500/10' : 'text-slate-400 bg-slate-100 dark:bg-white/5 opacity-0 group-hover/col:opacity-100 hover:text-blue-500'}`}
-                            title={isVisible ? "Visible to Students" : "Hidden from Students"}
-                          >
-                            {togglingVisibility === col ? (
-                              <div className="w-2.5 h-2.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                            ) : isVisible ? (
-                              <Eye className="w-3 h-3" />
-                            ) : (
-                              <EyeOff className="w-3 h-3" />
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    </th>
-                  );
-                })}
+                {columns.map(col => (
+                  <th key={col} className="px-3 md:px-6 py-4 text-left text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                    {col}
+                  </th>
+                ))}
                 <th className="px-3 md:px-6 py-4 text-left text-[9px] md:text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">Total</th>
-                <th className="px-3 md:px-6 py-4 text-left text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">Grade</th>
+                <th className="px-3 md:px-6 py-4 text-left text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">{isLocked ? "Grade" : "Potential Grade"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-white/[0.05]">
@@ -345,7 +280,7 @@ export default function MarksTablePage() {
                   </td>
                   <td className="px-3 md:px-5 py-3 md:py-4 whitespace-nowrap text-center text-[10px]">
                     <span className={`inline-flex items-center px-2 py-0.5 md:px-2.5 md:py-1 rounded-md md:rounded-lg text-[10px] md:text-xs font-bold ${gradeChip(score.grade)}`}>
-                      {score.grade || "?"}
+                      {!isLocked && score.grade && score.grade !== "?" && score.grade !== "N/A" ? `Potential ${score.grade}` : (score.grade || "?")}
                     </span>
                   </td>
                 </tr>

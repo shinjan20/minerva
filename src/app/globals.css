@@ -175,8 +175,18 @@
   .grade-b      { @apply bg-sky-500/15 text-sky-300 border border-sky-500/30; }
   .grade-c      { @apply bg-amber-500/15 text-amber-300 border border-amber-500/30; }
   .grade-f      { @apply bg-red-500/15 text-red-400 border border-red-500/30; }
-
-  /* Stat card border accents */
+ 
+   /* Remove number input spinners */
+   input::-webkit-outer-spin-button,
+   input::-webkit-inner-spin-button {
+     -webkit-appearance: none;
+     margin: 0;
+   }
+   input[type=number] {
+     -moz-appearance: textfield;
+   }
+ 
+   /* Stat card border accents */
   .stat-purple  { @apply border-t-2 border-t-purple-500; }
   .stat-indigo  { @apply border-t-2 border-t-indigo-500; }
   .stat-emerald { @apply border-t-2 border-t-emerald-500; }

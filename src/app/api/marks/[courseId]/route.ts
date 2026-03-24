@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabase";
 import { getSession } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
   request: Request,
   { params }: { params: { courseId: string } }
@@ -12,23 +14,28 @@ export async function GET(
 
     const supabase = getServiceSupabase();
     
-    // 1. Get visible components rules (if role is STUDENT, only fetch components where is_visible = true)
-    let visibleComponents: string[] = [];
-    if (session.role === "STUDENT") {
-      const { data: visData } = await supabase.from("marks_visibility").select("component").eq("course_id", params.courseId).eq("is_visible", true);
-      visibleComponents = visData?.map(v => v.component) || [];
+    // 1. Mark visibility restrictions removed - all marks visible to registered students
+    const visibleComponents: string[] = []; // No longer using this for filtering
+
+    // 2. Section lock for CRs and Students
+    // If CR or Student, only fetch marks/snapshots for students in their section.
+    
+    let studentSection = (session as any).section;
+    if (!studentSection && session.role === "STUDENT") {
+        const { data: profile } = await supabase.from("student_roster").select("section").eq("user_id", session.id).single();
+        studentSection = profile?.section;
     }
 
-    // 2. Section lock for CRs
-    // If CR, only fetch marks/snapshots for students in their section.
-    // We achieve this via inner joining `student_id` (users) and checking `section`.
-
-    // 3. Get all raw marks for the course (needed for the Pivot Table UI)
     let marksQuery = supabase.from("marks").select("*, student_roster!inner(user_id, section, name, student_id)").eq("course_id", params.courseId);
+    
     if (session.role === "CR") {
        marksQuery = marksQuery.eq("student_roster.section", session.section);
     } else if (session.role === "STUDENT") {
-       marksQuery = marksQuery.eq("student_roster.user_id", session.id);
+       if (studentSection) {
+           marksQuery = marksQuery.eq("student_roster.section", studentSection);
+       } else {
+           marksQuery = marksQuery.eq("student_roster.user_id", session.id);
+       }
     }
 
     const { data: marks, error: marksErr } = await marksQuery;
@@ -41,21 +48,17 @@ export async function GET(
     marks.forEach((m: any) => {
         Object.keys(m.marks_data || {}).forEach(k => {
             const kLower = k.toLowerCase();
-            // We still filter these out from the dynamic 'columns' list if they are 'total' variants 
-            // but we ensure they are captured in the pivot map.
-            if (kLower === "_total" || kLower === "total" || kLower === "aggregate") return;
+            if (k.startsWith("_") || kLower === "total" || kLower === "aggregate") return;
             uniqueCols.add(k);
         });
     });
 
     // Filter columns for students based on visibility rules
     let columns = Array.from(uniqueCols);
-    if (session.role === "STUDENT") {
-      columns = columns.filter(c => visibleComponents.includes(c) || c === '_total' || c.toLowerCase() === 'total');
-    }
+    // Student visibility restrictions removed - all columns visible
     
-    // Explicitly hide any total variants from the dynamic horizontal columns
-    columns = columns.filter(c => c !== '_total' && c.toLowerCase() !== 'total' && c.toLowerCase() !== 'aggregate');
+    // Explicitly hide any internal variants from the dynamic horizontal columns
+    columns = columns.filter(c => !c.startsWith("_") && c.toLowerCase() !== 'total' && c.toLowerCase() !== 'aggregate');
 
     // Pivot components dictionary per student_uuid
     const pivotMap: Record<string, any> = {};
@@ -76,46 +79,34 @@ export async function GET(
       
       Object.keys(m.marks_data || {}).forEach(comp => {
          const compLower = comp.toLowerCase();
-         if (session.role !== "STUDENT" || visibleComponents.includes(comp) || compLower === '_total' || compLower === 'total') {
+         if (true) { // All components visible
             const raw = m.marks_data[comp];
             pivotMap[userUuid][comp] = typeof raw === 'object' && raw !== null ? raw.score : raw;
          }
       });
     });
 
-    // 4. Fetch the aggregated totals (Snapshot)
-    let snapQuery = supabase.from("marks_snapshot").select("*, student_id!inner(id, name, section, student_roster!student_roster_user_id_fkey(student_id))").eq("course_id", params.courseId);
-    if (session.role === "CR") snapQuery = snapQuery.eq("student_id.section", session.section);
-    else if (session.role === "STUDENT") snapQuery = snapQuery.eq("student_id.id", session.id);
-
-    const { data: snapshots } = await snapQuery;
-
-    const snapshotMap: Record<string, any> = {};
-    (snapshots || []).forEach((snap: any) => {
-        snapshotMap[snap.student_id?.id] = snap;
-    });
-
-    // 5. Build final UI array mapping by unifying marks + snapshots
-    const handledUuids = new Set<string>();
-    
+    // 4. Build final UI array mapping by unifying marks data
     const finalScores = Object.keys(pivotMap).map(uuid => {
-      handledUuids.add(uuid);
       const pData = pivotMap[uuid];
-      const snap = snapshotMap[uuid];
       const meta = pData._meta;
 
       const comps = { ...pData };
       delete comps._meta;
 
-      // Aggressive total discovery for ranking
-      let aggregateTotal: number | null = snap?.total_weighted ?? pData?._total ?? null;
+      // Extract grades and ranks from marks_data (prefixed with underscores)
+      // These are populated by the aggregation engine
+      const grade = pData?._grade || "N/A";
+      const rank = pData?._rank || null;
+      const sectionRank = pData?._section_rank || null;
+
+      // Aggressive total discovery for display
+      let aggregateTotal: number | null = pData?.Total ?? pData?._total ?? null;
       if (aggregateTotal === null) {
-          // If neither _total nor snapshot exists, check for a column named 'TOTAL' or 'total'
           const totalKey = Object.keys(pData).find(k => k.toLowerCase() === "total");
           if (totalKey) {
             aggregateTotal = parseFloat(pData[totalKey]);
           } else {
-            // FALLBACK: Simple sum of all numeric components for real-time visibility
             const numericScores = Object.values(comps).filter(v => typeof v === 'number') as number[];
             if (numericScores.length > 0) {
               aggregateTotal = numericScores.reduce((a, b) => a + b, 0);
@@ -124,35 +115,16 @@ export async function GET(
       }
 
       return {
-        student_id: meta.official_id || snap?.student_id?.student_roster?.[0]?.student_id || uuid.substring(0,8),
-        name: meta.name || snap?.student_id?.name || "Unknown",
-        section: meta.section || snap?.student_id?.section || "N/A",
+        student_id: meta.official_id || uuid.substring(0,8),
+        name: meta.name || "Unknown",
+        section: meta.section || "N/A",
         components: comps,
         total: isNaN(aggregateTotal as any) ? null : aggregateTotal,
-        grade: snap?.grade || "N/A",
-        rank: snap?.rank || null,
-        section_rank: snap?.section_rank || null,
+        grade: grade,
+        rank: rank,
+        section_rank: sectionRank,
         rank_change: 0
       };
-    });
-
-    // Inject any snapshots that strictly possess NO marks uploads
-    (snapshots || []).forEach((snap: any) => {
-       const uuid = snap.student_id?.id;
-       if (uuid && !handledUuids.has(uuid)) {
-           const officialStudentId = snap.student_id?.student_roster?.[0]?.student_id || uuid.substring(0,8);
-           finalScores.push({
-               student_id: officialStudentId,
-               name: snap.student_id?.name || "Unknown",
-               section: snap.student_id?.section || "N/A",
-               components: {},
-               total: snap.total_weighted,
-               grade: snap.grade,
-               rank: snap.rank,
-               section_rank: snap.section_rank || null,
-               rank_change: 0
-           });
-       }
     });
 
     // Soft-sort by total DESC first (to help frontend ranking), then by rank
@@ -172,9 +144,15 @@ export async function GET(
       courseTerm: courseData?.term || 1,
       is_locked: breakupData?.is_locked || false,
       stats: {
-          avg: breakupData?.grade_cutoffs?._meta_avg || null,
-          max: breakupData?.grade_cutoffs?._meta_max || null,
-          median: breakupData?.grade_cutoffs?._meta_median || null,
+          avg: (session.role === "STUDENT" || session.role === "CR") 
+               ? (breakupData?.grade_cutoffs?.[`_meta_${studentSection || session.section}_avg`] || null)
+               : (breakupData?.grade_cutoffs?._meta_avg || null),
+          max: (session.role === "STUDENT" || session.role === "CR")
+               ? (breakupData?.grade_cutoffs?.[`_meta_${studentSection || session.section}_max`] || null)
+               : (breakupData?.grade_cutoffs?._meta_max || null),
+          median: (session.role === "STUDENT" || session.role === "CR")
+               ? (breakupData?.grade_cutoffs?.[`_meta_${studentSection || session.section}_median`] || null)
+               : (breakupData?.grade_cutoffs?._meta_median || null),
       }
     });
   } catch (err) {

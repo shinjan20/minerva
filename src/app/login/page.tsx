@@ -15,6 +15,7 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Login form submitted:", email);
     setLoading(true);
     setErrorMsg("");
 
@@ -26,10 +27,17 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
+      console.log("Login response status:", res.status, data);
 
       if (res.ok) {
         toast.success("Login successful!");
+        // Try router push first, then fallback to hard reload if it fails to move
         router.push("/dashboard");
+        setTimeout(() => {
+          if (window.location.pathname !== "/dashboard") {
+            window.location.href = "/dashboard";
+          }
+        }, 500);
       } else {
         if (data.requiresRegistration) {
           toast.error(data.error);
@@ -41,6 +49,7 @@ export default function LoginPage() {
         }
       }
     } catch (err) {
+      console.error("Login catch error:", err);
       toast.error("Network error occurred");
       setErrorMsg("Network error occurred. Please try again.");
     } finally {
@@ -50,7 +59,7 @@ export default function LoginPage() {
 
   return (
     <AuthLayout title="Welcome back" subtitle="Sign in to your academic portal">
-      <form onSubmit={handleLogin} className="space-y-5">
+      <form onSubmit={handleLogin} method="POST" className="space-y-5">
         {errorMsg && (
           <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 flex items-start gap-3 animate-fade-in-up">
             <svg className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">

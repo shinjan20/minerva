@@ -14,6 +14,7 @@ type Breakup = {
   midterm_pct: number;
   project_pct: number;
   endterm_pct: number;
+  cp_pct: number;
   is_locked: boolean;
 };
 
@@ -29,6 +30,7 @@ export default function ScoreBreakupPage() {
     midterm_pct: 0,
     project_pct: 0,
     endterm_pct: 0,
+    cp_pct: 0,
     is_locked: false,
   });
 
@@ -60,7 +62,7 @@ export default function ScoreBreakupPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const sum = Number(breakup.quiz_pct) + Number(breakup.midterm_pct) + Number(breakup.project_pct) + Number(breakup.endterm_pct);
+    const sum = Number(breakup.quiz_pct) + Number(breakup.midterm_pct) + Number(breakup.project_pct) + Number(breakup.endterm_pct) + Number(breakup.cp_pct);
     if (sum !== 100) {
       toast.error(`Weights must sum precisely to 100. Current sum: ${sum}`);
       return;
@@ -78,7 +80,7 @@ export default function ScoreBreakupPage() {
       const data = await res.json();
       if (res.ok) {
         toast.success("Score breakup saved successfully");
-        fetchBreakup();
+        setTimeout(() => router.push("/dashboard/courses"), 1200);
       } else {
         toast.error(data.error || "Failed to save breakup");
       }
@@ -91,7 +93,7 @@ export default function ScoreBreakupPage() {
 
   if (loading) return <LoadingPopup message="Retrieving configuration and grading thresholds..." />;
 
-  const currentSum = (Number(breakup.quiz_pct) + Number(breakup.midterm_pct) + Number(breakup.project_pct) + Number(breakup.endterm_pct));
+  const currentSum = (Number(breakup.quiz_pct) + Number(breakup.midterm_pct) + Number(breakup.project_pct) + Number(breakup.endterm_pct) + Number(breakup.cp_pct));
   const isSumValid = currentSum === 100;
 
   return (
@@ -147,6 +149,7 @@ export default function ScoreBreakupPage() {
             <div className="grid grid-cols-1 gap-6">
               {[
                 { label: "Quizzes & Assignments", key: "quiz_pct" },
+                { label: "Class Participation", key: "cp_pct" },
                 { label: "Mid-Term Examination", key: "midterm_pct" },
                 { label: "Major Project / Viva", key: "project_pct" },
                 { label: "Term End Examination", key: "endterm_pct" }
@@ -155,7 +158,7 @@ export default function ScoreBreakupPage() {
                   <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">{comp.label}</label>
                   <div className="relative">
                     <input 
-                      type="number" step="0.01" min="0" max="100" required disabled={breakup.is_locked}
+                      type="number" step="any" min="0" max="100" required disabled={breakup.is_locked}
                       className="w-full bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.1] rounded-2xl px-6 py-4 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500/50 transition-all font-black text-lg disabled:opacity-50"
                       value={(breakup as any)[comp.key]} 
                       onChange={(e) => setBreakup({...breakup, [comp.key]: parseFloat(e.target.value) || 0})}

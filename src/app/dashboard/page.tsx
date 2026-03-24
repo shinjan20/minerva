@@ -72,8 +72,8 @@ export default async function DashboardPage() {
                   <BarChart3 className="w-5 h-5" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">Marks Table</h4>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mt-1">Raw Marks Data Stream</p>
+                  <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">{isStudent ? "Points Table" : "Marks Table"}</h4>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mt-1">{isStudent ? "View Points & Rankings" : "Raw Marks Data Stream"}</p>
                 </div>
               </Link>
             </div>

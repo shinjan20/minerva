@@ -4,14 +4,12 @@ import { getServiceSupabase } from "@/lib/supabase";
 import * as xlsx from "xlsx";
 let pdfParseFn: any;
 try {
-    const pdfParseLib = require("pdf-parse");
-    pdfParseFn = pdfParseLib;
-    if (typeof pdfParseFn !== 'function' && pdfParseFn?.default) {
-        pdfParseFn = pdfParseFn.default;
-    }
+  const pdfParseLib = require("pdf-parse");
+  pdfParseFn = pdfParseLib.PDFParse || pdfParseLib.default || pdfParseLib;
 } catch (e) {
-    console.error("Critical: pdf-parse failed to load/require", e);
+  console.error("Critical: pdf-parse failed to load/require", e);
 }
+
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { getSession } from "@/lib/auth";
@@ -43,74 +41,84 @@ export async function POST(
 
     // PDF Table Regex Scraping Pipeline - IIML Faculty Results Template
     if (fileName.endsWith(".pdf")) {
-       if (typeof pdfParseFn !== 'function') {
-           console.error("PDF Upload requested but pdfParseFn is not a function.");
+       if (typeof pdfParseFn !== 'function' && typeof pdfParseFn?.PDFParse !== 'function') {
+           console.error("PDF Upload requested but pdfParseFn is not a function/class. Type found:", typeof pdfParseFn);
            return NextResponse.json({ 
                error: "PDF parsing is currently unavailable on this server. Please convert your PDF to Excel (.xlsx) and try again.",
                suggestion: "Download our Excel template for the best experience."
            }, { status: 500 });
        }
-       const pdfData = await pdfParseFn(Buffer.from(buffer));
+       
+       const Constructor = pdfParseFn.PDFParse || pdfParseFn;
+       const parser = new Constructor({ data: Buffer.from(buffer) });
+       const pdfData = await parser.getText();
        const fullText = pdfData.text;
        const allLines = fullText.split("\n");
        
-       // DEBUG: log raw text so we can see the exact pdf-parse output pattern
-       console.log("=== PDF RAW TEXT (first 3000 chars) ===", fullText.substring(0, 3000));
+       console.log(`=== PDF Parsing: ${allLines.length} lines found ===`);
+       console.log("=== PDF RAW TEXT (first 500 chars) ===", fullText.substring(0, 500));
        
        // IIML Roll No: ABM/22/001, PGP/41/138R (slash) or PhD-26002 (dash)
-       const rollNoRegex = /([A-Z]{2,5}(?:[\/\-]\d{2,4}){1,3}[A-Z]*)/;
+       // Permissive space matching for characters extracted from PDF
+       const rollNoRegex = /([A-Z]{2,5}(?:\s*[\/\-]\s*\d{2,4}){1,3}\s*[A-Z]*)/;
        
        // Two-pass: map rollNo => {sno, name, scores[]} so we merge left+right halves of wide table
        const byRollNo = new Map<string, { sno: string; name: string; scores: string[] }>();
        const rollOrder: string[] = [];
        const headerLines: string[] = [];
        
-       for (const line of allLines) {
-         const tLine = line.trim();
-         if (!tLine) continue;
-         
-         // Capture any header line that contains "Roll No"
-         if (/roll\s*no/i.test(tLine)) {
-           headerLines.push(tLine);
-           continue;
-         }
-         
-         const rollMatch = tLine.match(rollNoRegex);
-         if (!rollMatch) continue;
-         
-         const rollNo = rollMatch[1];
-         const rollIdx = rollMatch.index!;
-         const before = tLine.substring(0, rollIdx).trim();
-         const after  = tLine.substring(rollIdx + rollNo.length).trim();
-         
-         // Split remaining tokens; walk right-to-left collecting scores vs name
-         const tokens = after.split(/[\s\t]+/).filter(Boolean);
-         const scoreTokens: string[] = [];
-         const nameTokens:  string[] = [];
-         let collectingScores = true;
-         
-         for (let ti = tokens.length - 1; ti >= 0; ti--) {
-           const tok = tokens[ti];
-           if (collectingScores && /^(\d+(\.\d+)?|[Aa]bsent|AB|ab|ME|A+|A|A-|B+|B|B-|C+|C|C-|D|F)$/.test(tok)) {
-             scoreTokens.unshift(tok);
-           } else {
-             collectingScores = false;
-             nameTokens.unshift(tok);
-           }
-         }
-         
-         const snoMatch = before.match(/(\d+)\s*$/);
-         const sno = snoMatch ? snoMatch[1] : before;
-         const studentName = nameTokens.join(" ").trim();
-         
-         if (byRollNo.has(rollNo)) {
-           // Second half of wide table — append right-side scores
-           byRollNo.get(rollNo)!.scores.push(...scoreTokens);
-         } else {
-           byRollNo.set(rollNo, { sno, name: studentName, scores: scoreTokens });
-           rollOrder.push(rollNo);
-         }
-       }
+        for (const line of allLines) {
+          const tLine = line.trim();
+          if (!tLine) continue;
+          
+          // Capture any header line that contains "Roll No"
+          if (/roll\s*no/i.test(tLine)) {
+            headerLines.push(tLine);
+            continue;
+          }
+          
+          const rollMatch = tLine.match(rollNoRegex);
+          if (!rollMatch) continue;
+          
+          const rollNo = rollMatch[1].replace(/\s+/g, ''); // Clean roll number
+          const rollIdx = rollMatch.index!;
+          const before = tLine.substring(0, rollIdx).trim();
+          const after  = tLine.substring(rollIdx + rollMatch[1].length).trim();
+          
+          // Split tokens; walk right-to-left collecting scores vs name
+          const tokensAfter = after.split(/[\s\t]+/).filter(Boolean);
+          const scoreTokens: string[] = [];
+          const nameTokensAfter: string[] = [];
+          let collectingScores = true;
+          
+          for (let ti = tokensAfter.length - 1; ti >= 0; ti--) {
+            const tok = tokensAfter[ti];
+            // Regex for scores (including decimals and status codes)
+            if (collectingScores && /^(\d+(\.\d+)?|[Aa]bsent|AB|ab|ME|A\+|A|A-|B\+|B|B-|C\+|C|C-|D|F)$/.test(tok)) {
+              scoreTokens.unshift(tok);
+            } else {
+              collectingScores = false;
+              nameTokensAfter.unshift(tok);
+            }
+          }
+          
+          const tokensBefore = before.split(/[\s\t]+/).filter(Boolean);
+          const sno = tokensBefore[0] || "";
+          const nameTokensBefore = tokensBefore.slice(1);
+          
+          // Combine name tokens from before and after (name could be split or on either side)
+          const studentName = [...nameTokensBefore, ...nameTokensAfter].join(" ").trim();
+          
+          console.log(`Matched Roll: ${rollNo} | Name: ${studentName} | Scores: ${scoreTokens.join(", ")}`);
+          
+          if (byRollNo.has(rollNo)) {
+            // Second half of wide table — append right-side scores
+            byRollNo.get(rollNo)!.scores.push(...scoreTokens);
+          } else {
+            byRollNo.set(rollNo, { sno, name: studentName, scores: scoreTokens });
+            rollOrder.push(rollNo);
+          }
+        }
        
        // Build score column names from all header lines found
        const scoreColNames: string[] = [];
@@ -124,21 +132,30 @@ export async function POST(
            .replace(/roll\s*no/gi, "")
            .replace(/section/gi, "")
            .trim()
-           .split(/\s{2,}|\t/)
+           .split(/\t|\s{2,}/) // Try tabs or double spaces first
            .map((s: string) => s.trim())
            .filter(Boolean);
-         scoreColNames.push(...cols);
+         
+         // If split by double spaces yielded only one column, try single space but filter common words
+         if (cols.length <= 1) {
+           const refined = afterName.split(/\s+/).filter(c => !/^[S0-9\.]+$/i.test(c) && !/name|roll|no|s\.?no/i.test(c));
+           scoreColNames.push(...refined);
+         } else {
+           scoreColNames.push(...cols);
+         }
        }
        
        const uniqueScoreCols = Array.from(new Set(scoreColNames));
-       rawData.push(["S.No", "Roll No", "Student Name", ...uniqueScoreCols]);
-       
-       for (const rollNo of rollOrder) {
-         const { sno, name, scores } = byRollNo.get(rollNo)!;
-         rawData.push([sno, rollNo, name, ...scores]);
-       }
-       
-       console.log(`=== PDF PARSED: ${rollOrder.length} students, score cols: [${uniqueScoreCols.join(", ")}] ===`);
+        rawData.push(["S.No", "Roll No", "Student Name", ...uniqueScoreCols]);
+        
+        for (const rollNo of rollOrder) {
+          const studentData = byRollNo.get(rollNo)!;
+          // Pad scores if they are fewer than headers
+          const paddedScores = uniqueScoreCols.map((_, idx) => studentData.scores[idx] || "");
+          rawData.push([studentData.sno, rollNo, studentData.name, ...paddedScores]);
+        }
+        
+        console.log(`=== PDF PARSED: ${rollOrder.length} students, score cols: [${uniqueScoreCols.join(", ")}] ===`);
     } else {
        // Standard Excel/CSV Ingestion
        const workbook = xlsx.read(buffer, { type: "array" });
@@ -201,6 +218,10 @@ export async function POST(
       return NextResponse.json({ error: "Invalid Template. Could not locate 'Roll No' or 'Student ID' header." }, { status: 400 });
     }
 
+    const { data: configs } = await supabase.from("marks_visibility").select("component, max_score").eq("course_id", params.courseId);
+    const configMap: Record<string, number> = {};
+    (configs || []).forEach(c => { if (c.max_score) configMap[c.component] = parseFloat(c.max_score.toString()); });
+
     const headerRow = rawData[headerRowIndex];
     const parsedComponents: { name: string, maxScore: number, colIndex: number }[] = [];
     const startIndex = studentNameIndex !== -1 ? studentNameIndex + 1 : rollNoIndex + 1;
@@ -213,13 +234,19 @@ export async function POST(
         if (lowerName === "grade" || lowerName === "s.no" || lowerName === "s.no." || lowerName.replace(/\./g, "") === "total" || lowerName.replace(/\./g, "") === "total marks" || lowerName === "aggregate") continue;
 
         let compName = colName;
-        let maxScore = 100; // Default baseline if not declared
+        let maxScore = configMap[colName] || 100; // Use config if available, default to 100
         
-        // Extract embedded max scores (e.g., "Mid Term(30)")
-        const match = colName.match(/(.+?)\s*\(\s*(\d+(\.\d+)?)\s*\)/);
-        if (match) {
-            compName = match[1].trim();
-            maxScore = parseFloat(match[2]);
+        // Extract embedded max scores (e.g., "Mid Term(30)") only if not in config
+        if (!configMap[colName]) {
+            const match = colName.match(/(.+?)\s*\(\s*(\d+(\.\d+)?)\s*\)/);
+            if (match) {
+                compName = match[1].trim();
+                maxScore = parseFloat(match[2]);
+            }
+        } else {
+            // If in config, we might still want to trim the name if it has brackets
+            const match = colName.match(/(.+?)\s*\(/);
+            if (match) compName = match[1].trim();
         }
 
         parsedComponents.push({ name: compName, maxScore, colIndex: j });
@@ -245,14 +272,22 @@ export async function POST(
             let score = null;
             
             const cellStr = rawCell.toString().trim();
-            if (cellStr.toLowerCase() === "absent" || cellStr.toLowerCase() === "ab") {
+            const lowerCell = cellStr.toLowerCase();
+            
+            if (lowerCell === "absent" || lowerCell === "ab") {
                 status = 'ABSENT';
+            } else if (lowerCell === "me" || lowerCell === "exempt" || lowerCell === "exemption") {
+                status = 'EXEMPTION';
             } else {
                 const parsed = parseFloat(cellStr);
                 if (!isNaN(parsed)) {
                     score = parsed;
+                    status = 'SCORED';
+                } else if (/^(A\+|A|A-|B\+|B|B-|C\+|C|C-|D|F)$/i.test(cellStr)) {
+                    score = 0; // Or keep as 0 for aggregation
+                    status = cellStr.toUpperCase(); // Store the grade in status for now
                 } else {
-                    return; // Ignore garbage telemetry
+                    return; // Ignore true garbage
                 }
             }
             
@@ -286,7 +321,7 @@ export async function POST(
       const userObj = match ? (Array.isArray(match.users) ? match.users[0] : match.users) : null;
       
       const isRegistered = !!userObj;
-      const isEnrolled = !!(match && match.batch === course.batch && match.section === course.section);
+      const isEnrolled = !!(match && match.batch === course.batch && (course.section === "ALL" || match.section === course.section));
       // Soft check for name mismatch if both exist
       const nameMismatch = !!(userObj && uploadItem.student_name && !userObj.name?.toLowerCase().includes(uploadItem.student_name.toLowerCase()));
 
@@ -323,6 +358,7 @@ export async function POST(
              if (!previewRows[vs.student_id]) {
                  const mergedComponents: Record<string, any> = {};
                  Object.keys(existingMarksMap[vs.student_id] || {}).forEach(k => {
+                     if (k.startsWith("_")) return;
                      mergedComponents[k] = existingMarksMap[vs.student_id][k].score;
                  });
 
@@ -488,8 +524,8 @@ export async function POST(
       outcome: "SUCCESS"
     });
 
-    // 8. Fire asynchronous aggregation
-    runCourseAggregation(params.courseId).catch((e) => console.error("Aggregation background failure", e));
+    // 8. Execute aggregation (Now AWAITED for consistency)
+    await runCourseAggregation(params.courseId).catch((e) => console.error("Aggregation failure", e));
 
     // 9. Fire asynchronous email notifications to students
     const uniqueStudentsToEmail = Array.from(new Set(mappedScores.map(m => m.user_uuid)));
