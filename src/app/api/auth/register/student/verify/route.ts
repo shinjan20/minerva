@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       .from("users")
       .select("*")
       .eq("email", email)
-      .eq("role", "STUDENT")
+      .in("role", ["STUDENT", "CR"])
       .single();
 
     if (userErr || !user) {

@@ -22,7 +22,7 @@ export async function GET() {
         batch, 
         year, 
         loaded_at,
-        users!student_roster_user_id_fkey!inner (name, email)
+        users!student_roster_user_id_fkey!inner (name, email, status, first_login)
       `)
       .order("loaded_at", { ascending: false });
 
@@ -34,7 +34,9 @@ export async function GET() {
     const roster = rawData?.map((r: any) => ({
       ...r,
       name: r.users?.name,
-      email: r.users?.email
+      email: r.users?.email,
+      status: r.users?.status,
+      first_login: r.users?.first_login
     }));
 
     return NextResponse.json({ roster });

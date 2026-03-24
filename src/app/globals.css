@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,38 +6,65 @@
 
 @layer base {
   :root {
-    --background: 225 30% 6%;
-    --foreground: 220 15% 92%;
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11.2%;
 
-    --card: 225 25% 9%;
-    --card-foreground: 220 15% 92%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11.2%;
 
-    --popover: 225 25% 9%;
-    --popover-foreground: 220 15% 92%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11.2%;
 
-    --primary: 265 80% 60%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 225 20% 14%;
-    --secondary-foreground: 220 15% 80%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222 47% 11.2%;
 
-    --muted: 225 20% 14%;
-    --muted-foreground: 215 15% 55%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 265 60% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222 47% 11.2%;
 
-    --destructive: 0 75% 55%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 225 20% 14%;
-    --input: 225 20% 14%;
-    --ring: 265 80% 60%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
+  }
 
-    --sidebar: 225 28% 7%;
-    --nav-hover: 265 80% 60%;
+  .dark {
+    --background: 222 47% 4%;
+    --foreground: 213 31% 91%;
+
+    --card: 222 47% 4%;
+    --card-foreground: 213 31% 91%;
+
+    --popover: 222 47% 4%;
+    --popover-foreground: 213 31% 91%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+
+    --secondary: 222 47% 11%;
+    --secondary-foreground: 213 31% 91%;
+
+    --muted: 223 47% 11%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 217 91% 60%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 32% 17%;
+    --input: 217 32% 17%;
+    --ring: 224 76% 48%;
   }
 }
 
@@ -52,12 +79,21 @@
   }
 
   body {
-    @apply bg-[#060b14] text-[#e2e8f3];
-    font-family: 'Inter', system-ui, sans-serif;
-    background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124, 58, 237, 0.12) 0%, transparent 60%),
-      radial-gradient(ellipse 50% 30% at 80% 100%, rgba(99, 102, 241, 0.08) 0%, transparent 50%);
+    @apply bg-background text-foreground transition-colors duration-300;
+    font-family: 'Orbitron', sans-serif;
+    background-image: var(--bg-gradient);
     background-attachment: fixed;
+    letter-spacing: 0.03em;
+  }
+
+  :root {
+    --bg-gradient: radial-gradient(circle at 50% -20%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+                   radial-gradient(circle at 80% 80%, rgba(30, 58, 138, 0.05) 0%, transparent 50%);
+  }
+
+  .dark {
+    --bg-gradient: radial-gradient(circle at 50% -20%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+                   radial-gradient(circle at 80% 80%, rgba(30, 58, 138, 0.1) 0%, transparent 50%);
   }
 
   h1, h2, h3, h4, h5, h6 {

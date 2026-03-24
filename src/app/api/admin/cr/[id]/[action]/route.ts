@@ -31,17 +31,15 @@ export async function PATCH(
     }
 
     let newStatus = "";
-    if (action === "approve") newStatus = "ACTIVE";
-    else if (action === "reject") newStatus = "REJECTED";
-    else if (action === "revoke") newStatus = "REVOKED";
+    if (action === "revoke") newStatus = "REVOKED";
     else return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 
     const { error: updateError } = await supabase
       .from("users")
       .update({
         status: newStatus,
-        verified_by: action === "approve" ? session.email : null,
-        verifying_office_id: action === "approve" ? session.id : null,
+        verified_by: null,
+        verifying_office_id: null,
         is_active: newStatus === "ACTIVE"
       })
       .eq("id", id);

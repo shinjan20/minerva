@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import AuthLayout from "@/components/AuthLayout";
+import AuthLayout from "../../components/AuthLayout";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -74,6 +74,7 @@ export default function LoginPage() {
               placeholder="yourname@iiml.ac.in"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              aria-label="Email Address"
             />
           </div>
 
@@ -91,6 +92,7 @@ export default function LoginPage() {
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                aria-label="Password"
               />
               <button
                 type="button"
@@ -108,7 +110,7 @@ export default function LoginPage() {
         </div>
 
         <div className="flex items-center justify-end">
-          <a href="/forgot-password" className="text-xs font-medium text-violet-400 hover:text-violet-300 transition-colors">
+          <a href="/forgot-password" className="text-xs font-black uppercase tracking-widest text-blue-400 hover:text-blue-300 transition-colors">
             Forgot password?
           </a>
         </div>
@@ -117,7 +119,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="relative w-full overflow-hidden group flex justify-center items-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-60 transition-all duration-200 shadow-[0_0_24px_rgba(124,58,237,0.4)] hover:shadow-[0_0_36px_rgba(124,58,237,0.6)]"
+          className="relative w-full overflow-hidden group flex justify-center items-center gap-2 py-4 px-4 rounded-xl text-xs font-black uppercase tracking-[0.2em] text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 disabled:opacity-60 transition-all duration-200 shadow-[0_0_24px_rgba(37,99,235,0.4)] hover:shadow-[0_0_36px_rgba(37,99,235,0.6)]"
         >
           {/* Shimmer effect */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />

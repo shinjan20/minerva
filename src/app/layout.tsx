@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
+import { ThemeProvider } from '@/components/ThemeProvider';
 
 export const metadata: Metadata = {
   title: "Minerva | IIML Academic Portal",
@@ -13,30 +14,48 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body>
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <body className="antialiased transition-colors duration-300">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
         <Toaster
-          position="top-center"
+          position="bottom-center"
           toastOptions={{
-            duration: 4000,
+            duration: 5000,
             style: {
-              background: 'rgba(10, 10, 25, 0.95)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              color: '#e2e8f3',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: '14px',
-              padding: '14px 20px',
-              fontWeight: 500,
-              fontSize: '14px',
-              boxShadow: '0 20px 60px -10px rgba(0,0,0,0.7), 0 0 0 1px rgba(124,58,237,0.1)',
+              background: 'rgba(2, 6, 23, 0.95)',
+              color: '#f8fafc',
+              border: '1px solid rgba(37, 99, 235, 0.4)',
+              borderRadius: '20px',
+              padding: '16px 28px',
+              fontWeight: 900,
+              fontSize: '12px',
+              fontFamily: "'Orbitron', sans-serif",
+              letterSpacing: '0.15em',
+              boxShadow: '0 0 40px rgba(37, 99, 235, 0.2), inset 0 0 15px rgba(37, 99, 235, 0.1)',
+              textTransform: 'uppercase',
+              backdropFilter: 'blur(16px)',
+              maxWidth: '550px',
             },
             success: {
-              iconTheme: { primary: '#34d399', secondary: '#000' },
+              iconTheme: { primary: '#10b981', secondary: '#020617' },
+              style: {
+                border: '1px solid rgba(16, 185, 129, 0.5)',
+                boxShadow: '0 0 30px rgba(16, 185, 129, 0.25)',
+              }
             },
             error: {
-              iconTheme: { primary: '#f87171', secondary: '#000' },
+              iconTheme: { primary: '#ef4444', secondary: '#020617' },
+              style: {
+                border: '1px solid rgba(239, 68, 68, 0.5)',
+                boxShadow: '0 0 30px rgba(239, 68, 68, 0.25)',
+              }
             },
           }}
         />

@@ -36,7 +36,14 @@ export async function runCourseAggregation(courseId: string) {
     }
     
     const marksData = m.marks_data || {};
-    studentScores[userUuid]._total = marksData._total || 0;
+    // Look for any key that equals 'total' (case-insensitive)
+    const totalKey = Object.keys(marksData).find(k => k.toLowerCase() === 'total' || k.toLowerCase() === 'total marks');
+    const scoreVal = totalKey ? marksData[totalKey] : null;
+    
+    // scoreVal might be an object {score, max_score, status} or just a number if we merged it
+    const finalScore = (typeof scoreVal === 'object' && scoreVal !== null) ? scoreVal.score : scoreVal;
+    
+    studentScores[userUuid]._total = typeof finalScore === 'number' ? finalScore : (marksData._total || 0);
   });
 
   // 4. Calculate Aggregate Totals

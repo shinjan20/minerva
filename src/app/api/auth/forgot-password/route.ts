@@ -10,19 +10,22 @@ function generateOTP() {
 
 export async function POST(request: Request) {
   try {
-    const { email } = await request.json();
+    const { email: rawEmail } = await request.json();
+    const email = rawEmail?.trim().toLowerCase();
 
     const supabase = getServiceSupabase();
     
     const { data: user } = await supabase
       .from("users")
-      .select("id")
+      .select("id, status")
       .eq("email", email)
-      .eq("status", "ACTIVE")
       .maybeSingle();
 
     if (!user) {
-      // Return success even if not found to prevent email enumeration
+      return NextResponse.json({ success: true });
+    }
+
+    if (user.status !== "ACTIVE") {
       return NextResponse.json({ success: true });
     }
 
@@ -30,13 +33,13 @@ export async function POST(request: Request) {
     const otpHash = await bcrypt.hash(otp, 10);
     const expiresAt = new Date(Date.now() + 15 * 60000).toISOString(); // 15 mins
 
-    await supabase.from("cr_otp_registration").insert({
-      cr_email: email,
-      section: "SYSTEM", // Overloading the table for pwd reset
-      batch: "PWD_RESET",
+    const { error: insertError } = await supabase.from("auth_otps").insert({
+      email,
       otp_hash: otpHash,
       expires_at: expiresAt,
     });
+
+    if (insertError) throw insertError;
 
     await sendEmail({
       to: email,

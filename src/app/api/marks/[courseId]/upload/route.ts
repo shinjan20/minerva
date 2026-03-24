@@ -132,13 +132,26 @@ export async function POST(
 
     const supabase = getServiceSupabase();
 
-    // 1. Course Validation 
+    // 1. Course & Term Validation 
     const { data: course } = await supabase.from("courses").select("*, created_by(email, name)").eq("id", params.courseId).single();
     if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
-    const { data: breakup } = await supabase.from("score_breakup").select("is_locked").eq("course_id", params.courseId).single();
-    if (breakup?.is_locked) {
-      return NextResponse.json({ error: "Course is finalized and locked. Further marks modifications are disabled." }, { status: 403 });
+    
+    // Global Term Lock Check
+    const { data: termStatus } = await supabase
+      .from("academic_terms")
+      .select("is_locked")
+      .eq("term", course.term || 1)
+      .single();
+
+    if (termStatus?.is_locked) {
+      return NextResponse.json({ 
+          error: "Term Locked.", 
+          details: `Academic Term ${course.term || 1} has been officially Published & Locked. Modifications are no longer permitted.` 
+      }, { status: 423 }); // 423 Locked
     }
+
+    const { data: breakup } = await supabase.from("score_breakup").select("is_locked").eq("course_id", params.courseId).single();
+    // We no longer block globally here; the specific logic below handles lock-based gating.
 
     // 2. Parse uploaded students through Dynamic Header Scanning
     let headerRowIndex = -1;
@@ -181,7 +194,7 @@ export async function POST(
         if (!colName) continue;
         
         const lowerName = colName.toLowerCase();
-        if (lowerName === "total marks" || lowerName === "grade" || lowerName === "s.no" || lowerName === "s.no.") continue;
+        if (lowerName === "grade" || lowerName === "s.no" || lowerName === "s.no.") continue;
 
         let compName = colName;
         let maxScore = 100; // Default baseline if not declared
@@ -289,14 +302,9 @@ export async function POST(
         
         validatedScores.forEach(vs => {
              if (!previewRows[vs.student_id]) {
-                 const existingComps = { ...(existingMarksMap[vs.student_id] || {}) };
-                 delete existingComps._total;
-                 
                  const mergedComponents: Record<string, any> = {};
-                 let currentTotal = 0;
-                 Object.keys(existingComps).forEach(k => {
-                     mergedComponents[k] = existingComps[k].score;
-                     if (typeof existingComps[k].score === 'number') currentTotal += existingComps[k].score;
+                 Object.keys(existingMarksMap[vs.student_id] || {}).forEach(k => {
+                     mergedComponents[k] = existingMarksMap[vs.student_id][k].score;
                  });
 
                  previewRows[vs.student_id] = {
@@ -304,23 +312,14 @@ export async function POST(
                      student_name: vs.student_name,
                      section: vs.section || "??",
                      components: mergedComponents,
-                     _runningSum: currentTotal,
                      validation: vs.validation
                  };
              }
              
-             const newScore = vs.score === null ? vs.status : vs.score;
-             const existingVal = previewRows[vs.student_id].components[vs.component];
-             if (typeof existingVal === 'number') previewRows[vs.student_id]._runningSum -= existingVal;
-             
-             previewRows[vs.student_id].components[vs.component] = newScore;
-             if (typeof newScore === 'number') previewRows[vs.student_id]._runningSum += newScore;
-             
-             previewRows[vs.student_id].components['_total'] = parseFloat(previewRows[vs.student_id]._runningSum.toFixed(2));
+             previewRows[vs.student_id].components[vs.component] = vs.score === null ? vs.status : vs.score;
         });
 
         const pColumns = parsedComponents.map(c => ({ name: c.name, maxScore: c.maxScore }));
-        pColumns.push({ name: "_total", maxScore: 0 });
 
         return NextResponse.json({
              preview: {
@@ -356,8 +355,8 @@ export async function POST(
       });
     }
 
-    // 5. OTP Lock mechanism for CRs
-    if (isReupload && session.role === "CR") {
+    // 5. OTP Lock mechanism for CRs - ONLY if component is locked
+    if (isReupload && session.role === "CR" && breakup?.is_locked) {
       const displayComponent = uniqueComponents.length > 2 ? "Multi-Component Batch" : uniqueComponents.join(" & ");
       if (!providedOtp) {
         const rawOtp = crypto.randomInt(100000, 999999).toString();
@@ -425,16 +424,6 @@ export async function POST(
          max_score: scoreObj.max_score,
          status: scoreObj.status
       };
-    });
-
-    Object.values(groupedScores).forEach((studentRow: any) => {
-        let total = 0;
-        Object.keys(studentRow.marks_data).forEach(comp => {
-            if (comp === "_total") return;
-            const score = studentRow.marks_data[comp].score;
-            if (typeof score === 'number') total += score;
-        });
-        studentRow.marks_data._total = parseFloat(total.toFixed(2));
     });
 
     const upsertPayload = Object.values(groupedScores);

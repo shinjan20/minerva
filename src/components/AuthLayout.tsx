@@ -3,13 +3,13 @@ import Link from 'next/link';
 
 export default function AuthLayout({ children, title, subtitle }: { children: React.ReactNode, title: string, subtitle: string }) {
   return (
-    <div className="min-h-screen bg-[#060b14] text-white flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen bg-[#020617] text-[#f8fafc] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden font-[Orbitron]">
       
       {/* Animated ambient glow orbs */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-15%] left-[-10%] w-[60%] h-[55%] rounded-full bg-violet-600/20 blur-[130px] animate-glow" />
+        <div className="absolute top-[-15%] left-[-10%] w-[60%] h-[55%] rounded-full bg-blue-600/20 blur-[130px] animate-glow" />
         <div className="absolute bottom-[-15%] right-[-10%] w-[55%] h-[50%] rounded-full bg-indigo-600/15 blur-[130px] animate-glow" style={{ animationDelay: '1.5s' }} />
-        <div className="absolute top-[40%] left-[50%] w-[35%] h-[35%] rounded-full bg-purple-800/10 blur-[100px] animate-glow" style={{ animationDelay: '3s' }} />
+        <div className="absolute top-[40%] left-[50%] w-[35%] h-[35%] rounded-full bg-blue-800/10 blur-[100px] animate-glow" style={{ animationDelay: '3s' }} />
         {/* Grid overlay */}
         <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
       </div>
@@ -18,7 +18,7 @@ export default function AuthLayout({ children, title, subtitle }: { children: Re
         <Link href="/" className="inline-flex flex-col items-center gap-5 hover:scale-[1.02] transition-transform duration-300">
           {/* Logo */}
           <div className="relative">
-            <div className="absolute inset-0 bg-violet-500/30 blur-2xl rounded-full scale-150" />
+            <div className="absolute inset-0 bg-blue-500/30 blur-2xl rounded-full scale-150" />
             <div className="relative h-24 w-24 bg-white/[0.06] border border-white/10 rounded-3xl p-3 backdrop-blur-md flex items-center justify-center shadow-[0_0_40px_rgba(124,58,237,0.2)]">
               <img src="/minerva_logo.png" alt="Minerva" className="w-full h-full object-contain invert" />
             </div>
@@ -26,8 +26,8 @@ export default function AuthLayout({ children, title, subtitle }: { children: Re
 
           {/* Wordmark */}
           <div>
-            <span className="text-3xl font-black tracking-tight text-white block" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>MINERVA</span>
-            <span className="text-xs text-violet-400 tracking-[0.3em] font-semibold uppercase">IIM Lucknow · Academic Portal</span>
+            <span className="text-3xl font-black tracking-tighter text-white block uppercase">MINERVA</span>
+            <span className="text-[10px] text-blue-400 tracking-[0.4em] font-black uppercase">IIM Lucknow · Academic Portal</span>
           </div>
         </Link>
 

@@ -2,6 +2,29 @@ import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabase";
 import { getSession } from "@/lib/auth";
 
+export async function GET(
+  request: Request,
+  { params }: { params: { courseId: string } }
+) {
+  try {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+
+    const supabase = getServiceSupabase();
+    const { data, error } = await supabase
+      .from("marks_visibility")
+      .select("component")
+      .eq("course_id", params.courseId)
+      .eq("is_visible", true);
+
+    if (error) throw error;
+
+    return NextResponse.json({ visibleComponents: data.map(d => d.component) });
+  } catch (err) {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: { courseId: string } }

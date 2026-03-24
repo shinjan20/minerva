@@ -61,49 +61,61 @@ export default function ManageCRsPage() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Manage Class Representatives</h1>
-        <p className="mt-1 text-sm text-gray-500">Approve pending applications or revoke active access.</p>
+      <div className="space-y-2">
+        <h1 className="text-4xl font-black tracking-tighter uppercase flex items-center gap-4">
+          <span className="w-2.5 h-12 bg-blue-600 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.8)]" />
+          <div className="flex items-center gap-3">
+            <span className="text-slate-900 dark:text-white">Manage</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-indigo-600 dark:from-blue-400 dark:to-indigo-500">Class Representatives</span>
+          </div>
+        </h1>
+        <p className="text-sm text-slate-400 font-bold uppercase tracking-widest opacity-80">Approve pending applications or revoke active access from delegated student authorities.</p>
       </div>
 
-      <div className="bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name / Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Section & Batch</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+      <div className="bg-white/[0.02] border border-white/[0.06] backdrop-blur-3xl rounded-[2.5rem] overflow-hidden shadow-2xl relative">
+        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-600 opacity-50"></div>
+        <table className="min-w-full border-collapse">
+          <thead>
+            <tr className="border-b border-white/[0.06] bg-white/[0.02]">
+              <th className="px-8 py-6 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Authority / Identity</th>
+              <th className="px-8 py-6 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Assignment</th>
+              <th className="px-8 py-6 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Protocol Status</th>
+              <th className="px-8 py-6 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Directives</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-transparent divide-y divide-white/[0.03]">
             {crs.map((cr) => (
-              <tr key={cr.id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{cr.name}</div>
-                  <div className="text-sm text-gray-500">{cr.email}</div>
+              <tr key={cr.id} className="hover:bg-white/[0.02] transition-colors group">
+                <td className="px-8 py-6 whitespace-nowrap">
+                  <div className="text-sm font-bold text-white uppercase tracking-tight group-hover:text-blue-400 transition-colors">{cr.name}</div>
+                  <div className="text-[11px] font-mono text-slate-500 mt-1">{cr.email}</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">Sec: {cr.section}</div>
-                  <div className="text-sm text-gray-500">Batch: {cr.batch}</div>
+                <td className="px-8 py-6 whitespace-nowrap">
+                  <div className="flex gap-2">
+                    <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md text-[10px] font-black">SEC {cr.section}</span>
+                    <span className="px-2 py-0.5 bg-white/[0.05] text-slate-400 border border-white/10 rounded-md text-[10px] font-black">{cr.batch}</span>
+                  </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                    ${cr.status === "ACTIVE" ? "bg-green-100 text-green-800" : 
-                      cr.status === "PENDING" ? "bg-yellow-100 text-yellow-800" : 
-                      "bg-red-100 text-red-800"}`}>
+                <td className="px-8 py-6 whitespace-nowrap">
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border
+                    ${cr.status === "ACTIVE" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]" : 
+                      cr.status === "PENDING" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" : 
+                      "bg-red-500/10 text-red-400 border-red-500/20"}`}>
+                    <span className={`w-1 h-1 rounded-full mr-2 animate-pulse ${cr.status === "ACTIVE" ? "bg-emerald-400" : cr.status === "PENDING" ? "bg-amber-400" : "bg-red-400"}`} />
                     {cr.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                <td className="px-8 py-6 whitespace-nowrap text-sm font-medium space-x-3">
                   {cr.status === "PENDING" && (
-                    <>
-                      <button onClick={() => handleAction(cr.id, "approve")} className="text-green-600 hover:text-green-900">Approve</button>
-                      <button onClick={() => handleAction(cr.id, "reject")} className="text-red-600 hover:text-red-900">Reject</button>
-                    </>
+                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic opacity-50">Awaiting Student Sync</span>
                   )}
                   {cr.status === "ACTIVE" && (
-                    <button onClick={() => handleAction(cr.id, "revoke")} className="text-red-600 hover:text-red-900">Revoke</button>
+                    <button 
+                      onClick={() => handleAction(cr.id, "revoke")} 
+                      className="px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                    >
+                      Revoke Access
+                    </button>
                   )}
                 </td>
               </tr>

@@ -27,16 +27,20 @@ export default function ForgotPasswordPage() {
         body: JSON.stringify({ email }),
       });
 
+      const data = await res.json().catch(() => ({}));
+
       if (res.ok) {
         toast.success("If an account exists, an OTP has been sent.");
         setStep("reset");
       } else {
-        toast.error("Failed to process request");
-        setErrorMsg("Failed to process request");
+        console.error("Forgot password request failed:", data);
+        toast.error(data.error || "Failed to process request");
+        setErrorMsg(data.error || "Failed to process request");
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error("Network error in forgot password:", err);
       toast.error("Network error");
-      setErrorMsg("Network error occurred.");
+      setErrorMsg("Network error occurred: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -73,79 +77,87 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <AuthLayout title="Password Recovery" subtitle={step === "request" ? "Enter your email to reset password" : "Enter Verification OTP"}>
+    <AuthLayout title="Account Security" subtitle={step === "request" ? "Initialize or recover your academic account" : "Authorize Password Reset"}>
       {errorMsg && (
-        <div className="mb-6 rounded-md bg-red-900/40 p-4 border border-red-500/50 animate-fade-in-up">
-          <div className="flex">
+        <div className="mb-8 rounded-2xl bg-red-500/10 p-5 border border-red-500/20 animate-fade-in-up">
+          <div className="flex items-center gap-4">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
+               <span className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-500 font-bold">!</span>
             </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-200">{errorMsg}</h3>
+            <div className="flex-1">
+              <h3 className="text-[11px] font-black text-red-400 uppercase tracking-widest leading-loose">{errorMsg}</h3>
             </div>
           </div>
         </div>
       )}
       
       {step === "request" ? (
-        <form className="space-y-6" onSubmit={handleRequest}>
-          <div>
-            <input
+        <form className="space-y-8" onSubmit={handleRequest}>
+          <div className="space-y-3">
+             <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[.2em] pl-1">College Email Address</label>
+             <input
               type="email"
               required
-              className="appearance-none rounded w-full px-3 py-2 bg-white/5 border border-white/10 placeholder-gray-400 text-white focus:outline-none focus:ring-primary focus:border-primary transition-colors"
-              placeholder="Account Email"
+              className="appearance-none rounded-[1.25rem] w-full px-6 py-4 bg-white/[0.03] border border-white/[0.1] placeholder-slate-700 text-white focus:outline-none focus:border-blue-500/50 transition-all font-bold"
+              placeholder="e.g. pgp41059@iiml.ac.in"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
-          <div>
+          <div className="pt-2">
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-70 transition-all hover:scale-[1.02] active:scale-95 shadow-[0_4px_14px_0_rgba(107,33,168,0.39)] hover:shadow-[0_6px_20px_rgba(107,33,168,0.23)]"
+              className="w-full flex justify-center py-5 px-6 border border-transparent text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl text-white bg-blue-600 hover:bg-blue-500 transition-all hover:scale-[1.02] active:scale-95 shadow-[0_12px_24px_rgba(37,99,235,0.3)] disabled:opacity-50"
             >
-              {loading ? "Sending..." : "Send Reset Code"}
+              {loading ? "Initializing..." : "Send Verification Code"}
             </button>
           </div>
           
-          <div className="text-center">
-            <a href="/login" className="text-sm font-medium text-primary-400 hover:text-primary-300 transition-colors">
-              Back to Login
+          <div className="text-center pt-4">
+            <a href="/login" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-blue-400 transition-all">
+              ← Return to Login
             </a>
           </div>
         </form>
       ) : (
-        <form className="space-y-6" onSubmit={handleReset}>
-          <div className="space-y-4">
-            <input
-              type="text"
-              required
-              className="appearance-none tracking-widest text-xl rounded w-full px-3 py-2 bg-white/5 border border-white/10 placeholder-gray-500 text-white focus:outline-none focus:ring-primary focus:border-primary text-center transition-colors"
-              placeholder="6-Digit OTP"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              maxLength={6}
-            />
-            <input
-              type="password"
-              required
-              className="appearance-none rounded w-full px-3 py-2 bg-white/5 border border-white/10 placeholder-gray-400 text-white focus:outline-none focus:ring-primary focus:border-primary transition-colors"
-              placeholder="New Password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
+        <form className="space-y-8" onSubmit={handleReset}>
+          <div className="space-y-8">
+            <div className="space-y-3 text-center">
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[.3em] mb-4">Verification PIN</label>
+              <input
+                type="text"
+                required
+                className="appearance-none tracking-[0.5em] text-4xl font-black rounded-3xl w-full px-4 py-8 bg-white/[0.03] border border-white/[0.1] placeholder-slate-900 text-white focus:outline-none focus:border-blue-500/50 text-center transition-all shadow-inner"
+                placeholder="------"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
+                maxLength={6}
+              />
+              <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest mt-4">Check your email for the 6-digit code</p>
+            </div>
+            <div className="space-y-3">
+               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[.2em] pl-1">New Terminal Password</label>
+               <input
+                type="password"
+                required
+                className="appearance-none rounded-[1.25rem] w-full px-6 py-4 bg-white/[0.03] border border-white/[0.1] placeholder-slate-700 text-white focus:outline-none focus:border-blue-500/50 transition-all font-bold"
+                placeholder="••••••••"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                aria-label="New Terminal Password"
+              />
+               <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest mt-2 px-1">Must be at least 8 characters long</p>
+            </div>
           </div>
-          <div>
+          <div className="pt-6">
             <button
               type="submit"
-              disabled={loading || otp.length !== 6 || newPassword.length < 6}
-              className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-70 transition-all hover:scale-[1.02] active:scale-95 shadow-[0_4px_14px_0_rgba(107,33,168,0.39)] hover:shadow-[0_6px_20px_rgba(107,33,168,0.23)]"
+              disabled={loading || otp.length !== 6 || newPassword.length < 8}
+              className="w-full flex justify-center py-5 px-6 border border-transparent text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl text-white bg-emerald-600 hover:bg-emerald-500 transition-all hover:scale-[1.02] active:scale-95 shadow-[0_12px_24px_rgba(16,185,129,0.3)]"
             >
-              {loading ? "Resetting..." : "Reset Password"}
+              {loading ? "Overwriting..." : "Register Credentials"}
             </button>
           </div>
         </form>

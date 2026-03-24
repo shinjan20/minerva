@@ -20,7 +20,14 @@ export async function GET(
 
     if (error) return NextResponse.json({ error: "Failed to fetch breakup" }, { status: 500 });
     
-    return NextResponse.json({ breakup });
+    // Fetch course info
+    const { data: courseData } = await supabase.from("courses").select("name, term").eq("id", params.id).single();
+    
+    return NextResponse.json({ 
+      breakup,
+      courseName: courseData?.name || "Unknown Course",
+      courseTerm: courseData?.term || 1
+    });
   } catch (err) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

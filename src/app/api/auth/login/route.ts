@@ -28,7 +28,10 @@ export async function POST(request: Request) {
 
     if (user.status !== "ACTIVE") {
       if (user.status === "PENDING") {
-        return NextResponse.json({ error: "Account pending office verification" }, { status: 403 });
+        return NextResponse.json({ 
+          error: "Your account is pending registration. Please check your institutional email for the enrollment link and OTP.",
+          isPending: true
+        }, { status: 403 });
       }
       return NextResponse.json({ error: `Account status: ${user.status}` }, { status: 403 });
     }

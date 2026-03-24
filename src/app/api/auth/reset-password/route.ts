@@ -8,11 +8,9 @@ export async function POST(request: Request) {
     const supabase = getServiceSupabase();
 
     const { data: otpRecords } = await supabase
-      .from("cr_otp_registration")
+      .from("auth_otps")
       .select("*")
-      .eq("cr_email", email)
-      .eq("section", "SYSTEM")
-      .eq("batch", "PWD_RESET")
+      .eq("email", email)
       .eq("used", false)
       .gte("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false })
@@ -32,7 +30,7 @@ export async function POST(request: Request) {
     
     if (!isMatch) {
       await supabase
-        .from("cr_otp_registration")
+        .from("auth_otps")
         .update({ attempts: otpRecord.attempts + 1 })
         .eq("id", otpRecord.id);
       return NextResponse.json({ error: "Incorrect OTP" }, { status: 400 });
@@ -46,7 +44,7 @@ export async function POST(request: Request) {
       .eq("email", email);
 
     await supabase
-      .from("cr_otp_registration")
+      .from("auth_otps")
       .update({ used: true })
       .eq("id", otpRecord.id);
 

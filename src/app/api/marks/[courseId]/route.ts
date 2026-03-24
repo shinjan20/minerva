@@ -41,7 +41,9 @@ export async function GET(
     marks.forEach((m: any) => {
         Object.keys(m.marks_data || {}).forEach(k => {
             const kLower = k.toLowerCase();
-            if (kLower.includes("total") || kLower.includes("aggregate")) return;
+            // We still filter these out from the dynamic 'columns' list if they are 'total' variants 
+            // but we ensure they are captured in the pivot map.
+            if (kLower === "_total" || kLower === "total" || kLower === "aggregate") return;
             uniqueCols.add(k);
         });
     });
@@ -49,11 +51,11 @@ export async function GET(
     // Filter columns for students based on visibility rules
     let columns = Array.from(uniqueCols);
     if (session.role === "STUDENT") {
-      columns = columns.filter(c => visibleComponents.includes(c) || c === '_total');
+      columns = columns.filter(c => visibleComponents.includes(c) || c === '_total' || c.toLowerCase() === 'total');
     }
     
-    // Hide _total from dynamically mapped columns
-    columns = columns.filter(c => c !== '_total');
+    // Explicitly hide any total variants from the dynamic horizontal columns
+    columns = columns.filter(c => c !== '_total' && c.toLowerCase() !== 'total' && c.toLowerCase() !== 'aggregate');
 
     // Pivot components dictionary per student_uuid
     const pivotMap: Record<string, any> = {};
@@ -73,7 +75,8 @@ export async function GET(
       }
       
       Object.keys(m.marks_data || {}).forEach(comp => {
-         if (session.role !== "STUDENT" || visibleComponents.includes(comp) || comp === '_total') {
+         const compLower = comp.toLowerCase();
+         if (session.role !== "STUDENT" || visibleComponents.includes(comp) || compLower === '_total' || compLower === 'total') {
             const raw = m.marks_data[comp];
             pivotMap[userUuid][comp] = typeof raw === 'object' && raw !== null ? raw.score : raw;
          }
@@ -104,12 +107,20 @@ export async function GET(
       const comps = { ...pData };
       delete comps._meta;
 
+      // Aggressive total discovery for ranking
+      let aggregateTotal: number | null = snap?.total_weighted ?? pData?._total ?? null;
+      if (aggregateTotal === null) {
+          // If neither _total nor snapshot exists, check for a column named 'TOTAL' or 'total'
+          const totalKey = Object.keys(pData).find(k => k.toLowerCase() === "total");
+          if (totalKey) aggregateTotal = parseFloat(pData[totalKey]);
+      }
+
       return {
         student_id: meta.official_id || snap?.student_id?.student_roster?.[0]?.student_id || uuid.substring(0,8),
         name: meta.name || snap?.student_id?.name || "Unknown",
         section: meta.section || snap?.student_id?.section || "N/A",
         components: comps,
-        total: snap?.total_weighted ?? pData?._total ?? null,
+        total: isNaN(aggregateTotal as any) ? null : aggregateTotal,
         grade: snap?.grade || "N/A",
         rank: snap?.rank || null,
         section_rank: snap?.section_rank || null,
@@ -136,16 +147,21 @@ export async function GET(
        }
     });
 
-    // Soft-sort by rank
-    finalScores.sort((a,b) => (a.rank || 999) - (b.rank || 999));
+    // Soft-sort by total DESC first (to help frontend ranking), then by rank
+    finalScores.sort((a,b) => (b.total || 0) - (a.total || 0));
 
     // Fetch locked status and stats from score_breakup
     const { data: breakupData } = await supabase.from("score_breakup").select("is_locked, grade_cutoffs").eq("course_id", params.courseId).single();
+
+    // Fetch course name and term
+    const { data: courseData } = await supabase.from("courses").select("name, term").eq("id", params.courseId).single();
 
     return NextResponse.json({ 
       scores: finalScores, 
       columns: columns, 
       role: session.role,
+      courseName: courseData?.name || "Unknown Course",
+      courseTerm: courseData?.term || 1,
       is_locked: breakupData?.is_locked || false,
       stats: {
           avg: breakupData?.grade_cutoffs?._meta_avg || null,

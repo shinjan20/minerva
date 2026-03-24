@@ -32,8 +32,17 @@ export async function POST(request: Request) {
 
     const isReupload = existingMarks && existingMarks.length > 0;
 
-    // 2. CR OTP re-upload guard (Module 9)
-    if (session.role === "CR" && isReupload) {
+    // Fetch lock status
+    const { data: breakup } = await supabase
+      .from("score_breakup")
+      .select("is_locked")
+      .eq("course_id", courseId)
+      .maybeSingle();
+    
+    const isLocked = breakup?.is_locked || false;
+
+    // 2. CR OTP re-upload guard (Module 9) - ONLY if locked
+    if (session.role === "CR" && isReupload && isLocked) {
       if (!otp) {
         // We need to generate an OTP and tell the frontend it's required
         const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -46,7 +55,7 @@ export async function POST(request: Request) {
         // Mock email
         console.log(`[EMAIL] To Office: CR ${session.email} wants to re-upload ${component}. OTP: ${newOtp}`);
         
-        return NextResponse.json({ needs_otp: true, message: "OTP required" }, { status: 403 });
+        return NextResponse.json({ needs_otp: true, message: "OTP required (Component Locked)" }, { status: 403 });
       } else {
         // Here we would verify the OTP from otp_requests
         const { data: otpRecords } = await supabase.from("otp_requests")

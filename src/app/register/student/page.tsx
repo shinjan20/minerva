@@ -147,6 +147,7 @@ function StudentRegistrationForm() {
                 className="appearance-none rounded w-full px-3 py-3 bg-white/40 border border-gray-200 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary transition-colors" 
                 value={email} 
                 onChange={e => setEmail(e.target.value)} 
+                aria-label="College Email Address"
               />
             </div>
           </div>
@@ -162,34 +163,68 @@ function StudentRegistrationForm() {
 
       {step === "otp" && (
         <form className="mt-8 space-y-6 animate-fade-in" onSubmit={handleValidateOTP}>
-            <div className="bg-white/40 border border-gray-200 p-4 rounded-md space-y-2 mb-4">
-              <p className="text-sm font-medium text-gray-500">Name: <span className="font-semibold text-gray-900">{studentInfo.name}</span></p>
-              <p className="text-sm font-medium text-gray-500">Student ID / PGP ID: <span className="font-semibold text-gray-900">{studentInfo.student_id}</span></p>
-              <p className="text-sm font-medium text-gray-500">Section: <span className="font-semibold text-gray-900">{studentInfo.section}</span></p>
-              <p className="text-sm font-medium text-gray-500">Email: <span className="font-semibold text-gray-900">{studentInfo.email}</span></p>
-              <p className="text-xs text-primary-600/70 mt-3 pt-3 border-t border-gray-200 italic">
-                * These details were prefilled by your Office Administration and cannot be modified.
-              </p>
+            {/* Premium Identity Card */}
+            <div className="relative overflow-hidden bg-slate-900/40 dark:bg-black/40 border border-white/10 backdrop-blur-xl p-6 rounded-3xl group transition-all duration-300 hover:border-blue-500/30 shadow-2xl">
+              {/* Decorative accent */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-blue-600/10 transition-all" />
+              
+              <div className="relative space-y-4">
+                <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                  <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]">Verified Student Data</span>
+                  <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Full Name</p>
+                    <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{studentInfo.name}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Academic ID</p>
+                    <p className="text-sm font-black text-slate-900 dark:text-white font-[Orbitron] tracking-widest">{studentInfo.student_id}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Section</p>
+                    <p className="text-sm font-black text-blue-600 dark:text-blue-400">SECTION {studentInfo.section}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Email Context</p>
+                    <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate">{studentInfo.email}</p>
+                  </div>
+                </div>
+
+                <p className="text-[9px] text-slate-500/70 pt-4 border-t border-white/5 italic">
+                  * Pre-verified records by Office Administration.
+                </p>
+              </div>
             </div>
 
-            <div>
-              <input 
-                required 
-                type="text" 
-                maxLength={6} 
-                className="appearance-none rounded w-full px-3 py-3 bg-white/40 border border-gray-200 text-center text-2xl tracking-widest placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary transition-colors" 
-              value={otp} 
-              onChange={e => setOtp(e.target.value)} 
-              placeholder="000000" 
-            />
-          </div>
+            <div className="space-y-4">
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] text-center">Enter 6-Digit Secure OTP</label>
+              <div className="relative group">
+                <input 
+                  required 
+                  type="text" 
+                  maxLength={6} 
+                  className="appearance-none rounded-2xl w-full px-4 py-5 bg-white/5 border border-white/10 text-center text-4xl tracking-[0.4em] font-mono placeholder-white/5 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/50 transition-all shadow-inner" 
+                  value={otp} 
+                  onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, ''))} 
+                  placeholder="000000" 
+                  aria-label="Verification OTP"
+                />
+                <div className="absolute inset-0 rounded-2xl bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              </div>
+            </div>
 
           <button 
             type="submit" 
             disabled={otp.length !== 6 || loading} 
-            className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-70 transition-all hover:scale-[1.02] active:scale-95 shadow-[0_4px_14px_0_rgba(107,33,168,0.39)]"
+            className="w-full relative overflow-hidden group flex justify-center py-4 px-4 border border-transparent text-xs font-black uppercase tracking-[0.3em] rounded-2xl text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95 shadow-[0_10px_20px_-10px_rgba(37,99,235,0.5)]"
           >
-            {loading ? "Verifying Token..." : "Validate Token"}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+            <span className="relative">
+              {loading ? "Decrypting Token..." : "Validate Identity"}
+            </span>
           </button>
         </form>
       )}
@@ -209,6 +244,7 @@ function StudentRegistrationForm() {
               value={password} 
               onChange={e => setPassword(e.target.value)} 
               placeholder="Set Password (Alphanumeric, Min 8 chars)" 
+              aria-label="Set Registration Password"
             />
             
             {password.length > 0 && (
