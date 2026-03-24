@@ -58,6 +58,7 @@ export async function POST(request: Request) {
     const payload: UserPayload = {
       id: user.id,
       email: user.email,
+      name: user.name,
       role: user.role,
       section: user.section,
       batch: user.batch,

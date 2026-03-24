@@ -81,7 +81,7 @@ export async function GET() {
               const compLower = compName.toLowerCase();
               if (compName === '_total' || compLower === 'total' || compLower === 'aggregate' || compLower === 'total marks') return;
               
-              const isVisible = visibleComps.includes(compName) || courseBreakup?.is_locked;
+              const isVisible = true; // Show all uploaded components as per user request
               if (!isVisible) return;
               
               const comp = studentMarkRow.marks_data[compName];

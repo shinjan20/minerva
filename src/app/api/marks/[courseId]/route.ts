@@ -174,3 +174,33 @@ export async function GET(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { courseId: string } }
+) {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== "OFFICE_STAFF") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const supabase = getServiceSupabase();
+    
+    // Delete marks, snapshots, and visibility for this course
+    const { error: marksErr } = await supabase.from("marks").delete().eq("course_id", params.courseId);
+    const { error: snapErr } = await supabase.from("marks_snapshot").delete().eq("course_id", params.courseId);
+    const { error: visErr } = await supabase.from("marks_visibility").delete().eq("course_id", params.courseId);
+    const { error: breakupErr } = await supabase.from("score_breakup").delete().eq("course_id", params.courseId);
+
+    if (marksErr || snapErr || visErr || breakupErr) {
+      console.error("Delete Marksheet Error:", { marksErr, snapErr, visErr, breakupErr });
+      return NextResponse.json({ error: "Failed to reset marksheet" }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: "Marksheet removed successfully" });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

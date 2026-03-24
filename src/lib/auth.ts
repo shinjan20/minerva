@@ -7,6 +7,7 @@ const key = new TextEncoder().encode(secretKey);
 export type UserPayload = {
   id: string;
   email: string;
+  name?: string | null;
   role: "STUDENT" | "CR" | "OFFICE_STAFF";
   section?: string | null;
   batch?: string | null;

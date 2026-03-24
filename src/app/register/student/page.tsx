@@ -144,7 +144,7 @@ function StudentRegistrationForm() {
                 required 
                 type="email" 
                 placeholder="College Email Address *"
-                className="appearance-none rounded w-full px-3 py-3 bg-white/40 border border-gray-200 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary transition-colors" 
+                className="appearance-none rounded w-full px-3 py-3 bg-white/40 border border-gray-200 placeholder-gray-400 text-slate-900 dark:text-white focus:outline-none focus:ring-primary focus:border-primary transition-colors" 
                 value={email} 
                 onChange={e => setEmail(e.target.value)} 
                 aria-label="College Email Address"
@@ -240,7 +240,7 @@ function StudentRegistrationForm() {
               required 
               type="password" 
               minLength={8} 
-              className="appearance-none rounded w-full px-3 py-3 bg-white/40 border border-gray-200 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary transition-colors" 
+              className="appearance-none rounded w-full px-3 py-3 bg-white/40 border border-gray-200 placeholder-gray-400 text-slate-900 dark:text-white focus:outline-none focus:ring-primary focus:border-primary transition-colors" 
               value={password} 
               onChange={e => setPassword(e.target.value)} 
               placeholder="Set Password (Alphanumeric, Min 8 chars)" 

@@ -42,7 +42,7 @@ export async function POST(
        console.log("=== PDF RAW TEXT (first 3000 chars) ===", fullText.substring(0, 3000));
        
        // IIML Roll No: ABM/22/001, PGP/41/138R (slash) or PhD-26002 (dash)
-       const rollNoRegex = /([A-Z][A-Za-z]{1,5}[\/\-]\d{2,5}[\/\-]?\d{0,7}[A-Z]?)/;
+       const rollNoRegex = /([A-Z]{2,5}(?:[\/\-]\d{2,4}){1,3}[A-Z]*)/;
        
        // Two-pass: map rollNo => {sno, name, scores[]} so we merge left+right halves of wide table
        const byRollNo = new Map<string, { sno: string; name: string; scores: string[] }>();
@@ -68,14 +68,14 @@ export async function POST(
          const after  = tLine.substring(rollIdx + rollNo.length).trim();
          
          // Split remaining tokens; walk right-to-left collecting scores vs name
-         const tokens = after.split(/\s+/).filter(Boolean);
+         const tokens = after.split(/[\s\t]+/).filter(Boolean);
          const scoreTokens: string[] = [];
          const nameTokens:  string[] = [];
          let collectingScores = true;
          
          for (let ti = tokens.length - 1; ti >= 0; ti--) {
            const tok = tokens[ti];
-           if (collectingScores && /^(\d+(\.\d+)?|[Aa]bsent|AB|ab)$/.test(tok)) {
+           if (collectingScores && /^(\d+(\.\d+)?|[Aa]bsent|AB|ab|ME|A+|A|A-|B+|B|B-|C+|C|C-|D|F)$/.test(tok)) {
              scoreTokens.unshift(tok);
            } else {
              collectingScores = false;

@@ -6,6 +6,7 @@ import { TableSkeleton } from "@/components/Skeleton";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Eye, EyeOff, BarChart3, ScrollText } from "lucide-react";
+import ConfirmModal from "@/components/ConfirmModal";
 
 type Scorecard = {
   student_id: string;
@@ -42,6 +43,8 @@ export default function MarksTablePage() {
   const [isLocked, setIsLocked] = useState(false);
   const [visibleComponents, setVisibleComponents] = useState<string[]>([]);
   const [togglingVisibility, setTogglingVisibility] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [confirmFinalize, setConfirmFinalize] = useState(false);
 
   useEffect(() => {
     fetchMarks();
@@ -80,6 +83,23 @@ export default function MarksTablePage() {
     }
   };
 
+  const handleRemoveMarksheet = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/marks/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        toast.success("Marksheet removed successfully");
+        fetchMarks();
+      } else {
+        toast.error("Failed to remove marksheet");
+        setLoading(false);
+      }
+    } catch {
+      toast.error("Network error");
+      setLoading(false);
+    }
+  };
+
   const handleToggleVisibility = async (component: string) => {
     if (isLocked) return;
     const isVisible = visibleComponents.includes(component);
@@ -111,7 +131,6 @@ export default function MarksTablePage() {
   };
 
   const handleFinalize = async () => {
-    if (!window.confirm("Finalize this course? This permanently locks all scores and calculates final cohort ranks. This cannot be undone.")) return;
     setLoading(true);
     try {
       const res = await fetch(`/api/marks/${id}/finalize`, { method: "POST" });
@@ -185,53 +204,60 @@ export default function MarksTablePage() {
   );
 
   return (
-    <div className="p-8 max-w-full mx-auto space-y-7 animate-fade-in-up font-[Orbitron]">
+    <div className="p-4 md:p-8 max-w-full mx-auto space-y-6 md:space-y-7 animate-fade-in-up font-[Orbitron]">
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-slate-200 dark:border-white/[0.08]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 md:pb-8 border-b border-slate-200 dark:border-white/[0.08]">
         <div className="space-y-1">
-          <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 tracking-[0.3em] uppercase">Security Level: Terminal Access</span>
-          <h1 className="text-4xl font-black tracking-tighter uppercase flex items-center gap-4">
-            <span className="w-2.5 h-12 bg-blue-600 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.8)]" />
+          <span className="text-[9px] md:text-[10px] font-black text-blue-600 dark:text-blue-400 tracking-[0.3em] uppercase">Security Level: Terminal Access</span>
+          <h1 className="text-2xl md:text-4xl font-black tracking-tighter uppercase flex items-start md:items-center gap-3 md:gap-4">
+            <span className="w-1.5 md:w-2.5 h-8 md:h-12 bg-blue-600 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.8)] mt-1 md:mt-0" />
             <div className="flex flex-col">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 md:gap-3">
                 <span className="text-slate-900 dark:text-white">Marks</span>
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-indigo-600 dark:from-blue-400 dark:to-blue-600">Table</span>
               </div>
               {courseName && (
-                <div className="mt-1 flex items-center gap-3 text-lg sm:text-2xl font-black tracking-tighter">
-                  <span className="text-blue-600 dark:text-blue-400">Subject : {courseName}</span>
-                  <span className="text-slate-300 dark:text-white/20">|</span>
+                <div className="mt-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-[11px] sm:text-lg md:text-2xl font-black tracking-tight md:tracking-tighter">
+                  <span className="text-blue-600 dark:text-blue-400 truncate max-w-[240px] sm:max-w-none">Subject : {courseName}</span>
+                  <span className="hidden sm:inline text-slate-300 dark:text-white/20">|</span>
                   <span className="text-slate-500 dark:text-slate-400">Term : {courseTerm}</span>
                 </div>
               )}
             </div>
           </h1>
-          <p className="text-[10px] text-slate-600 dark:text-slate-400 font-black uppercase tracking-widest pl-7">Live ranking and aggregated performance breakdown.</p>
+          <p className="text-[9px] md:text-[10px] text-slate-600 dark:text-slate-400 font-black uppercase tracking-widest pl-4 md:pl-7">Live ranking and aggregated performance breakdown.</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 relative z-10">
+        <div className="flex flex-wrap items-center gap-2 md:gap-3 relative z-10">
           {role === "OFFICE_STAFF" && !isLocked && (
             <>
               <button
-                onClick={handleFinalize}
-                className="group flex items-center gap-2 px-6 py-3 bg-red-500/5 dark:bg-red-500/10 border border-red-500/20 hover:border-red-500 text-red-600 dark:text-red-400 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm"
+                onClick={() => setConfirmRemove(true)}
+                className="group flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-red-500/5 dark:bg-red-500/10 border border-slate-200 dark:border-white/[0.08] hover:border-red-500 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-xl md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm"
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                Finalize Table
+                <div className="w-1 md:w-1.5 h-1 md:h-1.5 rounded-full bg-slate-400 group-hover:bg-red-500" />
+                Remove Marksheet
+              </button>
+              <button
+                onClick={() => setConfirmFinalize(true)}
+                className="group flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-red-500/5 dark:bg-red-500/10 border border-red-500/20 hover:border-red-500 text-red-600 dark:text-red-400 rounded-xl md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm"
+              >
+                <div className="w-1 md:w-1.5 h-1 md:h-1.5 rounded-full bg-red-500 animate-pulse" />
+                Finalize
               </button>
               <button
                 onClick={() => router.push(`/dashboard/marks/${id}/upload`)}
-                className="px-8 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all duration-200 flex items-center gap-2 shadow-lg dark:shadow-[0_8px_20px_rgba(37,99,235,0.3)]"
+                className="px-5 md:px-8 py-2.5 md:py-3 bg-blue-600 text-white rounded-xl md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all duration-200 flex items-center gap-2 shadow-lg dark:shadow-[0_8px_20px_rgba(37,99,235,0.3)]"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                Upload Marks
+                <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                Upload
               </button>
             </>
           )}
           <button
             onClick={() => router.back()}
-            className="px-6 py-3 bg-white dark:bg-white/[0.05] border border-slate-200 dark:border-white/[0.08] text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 shadow-sm"
+            className="px-4 md:px-6 py-2.5 md:py-3 bg-white dark:bg-white/[0.05] border border-slate-200 dark:border-white/[0.08] text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-xl md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-200 shadow-sm"
           >
             ← Back
           </button>
@@ -244,15 +270,16 @@ export default function MarksTablePage() {
           <table className="min-w-full border-collapse">
             <thead>
               <tr className="border-b border-slate-200 dark:border-white/[0.06] bg-slate-50 dark:bg-white/[0.02]">
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Rank</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Section</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Chg</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">ID</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Name</th>
+                <th className="px-3 md:px-6 py-4 text-left text-[9px] md:text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">Course Rank</th>
+                <th className="px-3 md:px-6 py-4 text-left text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">Section Rank</th>
+                <th className="hidden sm:table-cell px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Section</th>
+                <th className="px-3 md:px-6 py-4 text-left text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">Chg</th>
+                <th className="hidden md:table-cell px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">ID</th>
+                <th className="px-3 md:px-6 py-4 text-left text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">Name</th>
                 {columns.map(col => {
                   const isVisible = visibleComponents.includes(col);
                   return (
-                    <th key={col} className="px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest group/col">
+                    <th key={col} className="px-3 md:px-6 py-4 text-left text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest group/col">
                       <div className="flex items-center gap-2">
                         {col}
                         {role === "OFFICE_STAFF" && !isLocked && (
@@ -263,7 +290,7 @@ export default function MarksTablePage() {
                             title={isVisible ? "Visible to Students" : "Hidden from Students"}
                           >
                             {togglingVisibility === col ? (
-                              <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                              <div className="w-2.5 h-2.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                             ) : isVisible ? (
                               <Eye className="w-3 h-3" />
                             ) : (
@@ -275,30 +302,33 @@ export default function MarksTablePage() {
                     </th>
                   );
                 })}
-                <th className="px-6 py-4 text-left text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">Total</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Grade</th>
+                <th className="px-3 md:px-6 py-4 text-left text-[9px] md:text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">Total</th>
+                <th className="px-3 md:px-6 py-4 text-left text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">Grade</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-white/[0.05]">
               {processedScores.map((score) => (
                 <tr key={score.student_id} className="hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-colors group">
-                  <td className="px-6 py-6 whitespace-nowrap text-sm font-black text-slate-900 dark:text-white">
+                  <td className="px-3 md:px-6 py-4 md:py-6 whitespace-nowrap text-[12px] md:text-sm font-black text-blue-600 dark:text-blue-400">
                     #{score.calculatedRank}
                   </td>
-                  <td className="px-6 py-6 whitespace-nowrap text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase">
+                  <td className="px-3 md:px-6 py-4 md:py-6 whitespace-nowrap text-[12px] md:text-sm font-black text-slate-900 dark:text-white">
+                    #{score.calculatedSectionRank}
+                  </td>
+                  <td className="hidden sm:table-cell px-6 py-6 whitespace-nowrap text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase">
                     {score.section || "A"}
                   </td>
-                  <td className="px-6 py-6 whitespace-nowrap text-[10px] font-black text-slate-400">
+                  <td className="px-3 md:px-6 py-4 md:py-6 whitespace-nowrap text-[9px] md:text-[10px] font-black text-slate-400">
                     {score.rank_change === 0 ? "—" : score.rank_change > 0 ? `+${score.rank_change}` : score.rank_change}
                   </td>
-                  <td className="px-6 py-6 whitespace-nowrap text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase">
+                  <td className="hidden md:table-cell px-6 py-6 whitespace-nowrap text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase">
                     {score.student_id}
                   </td>
-                  <td className="px-6 py-6 whitespace-nowrap">
-                    <div className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{score.name}</div>
+                  <td className="px-3 md:px-6 py-4 md:py-6 whitespace-nowrap">
+                    <div className="text-[12px] md:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight truncate max-w-[80px] md:max-w-[150px]">{score.name}</div>
                   </td>
                   {columns.map(col => (
-                    <td key={col} className="px-6 py-6 whitespace-nowrap text-sm font-bold text-slate-600 dark:text-slate-300">
+                    <td key={col} className="px-3 md:px-6 py-4 md:py-6 whitespace-nowrap text-[12px] md:text-sm font-bold text-slate-600 dark:text-slate-300">
                       {score.components[col] !== undefined ? (
                         <span className={String(score.components[col]) === "AB" ? "text-red-500" : String(score.components[col]) === "ME" ? "text-amber-500" : ""}>
                           {score.components[col]}
@@ -308,13 +338,13 @@ export default function MarksTablePage() {
                       )}
                     </td>
                   ))}
-                  <td className="px-5 py-4 whitespace-nowrap text-center bg-blue-50/30 dark:bg-blue-500/5">
-                    <span className="text-base font-black text-blue-700 dark:text-white">
-                      {score.total !== null && score.total !== undefined ? score.total.toFixed(1) : <span className="text-slate-400 italic text-sm font-normal">Pending</span>}
+                  <td className="px-3 md:px-5 py-3 md:py-4 whitespace-nowrap text-center bg-blue-50/30 dark:bg-blue-500/5">
+                    <span className="text-sm md:text-base font-black text-blue-700 dark:text-white">
+                      {score.total !== null && score.total !== undefined ? score.total.toFixed(1) : <span className="text-slate-500 dark:text-slate-400 italic text-xs font-normal">Pending</span>}
                     </span>
                   </td>
-                  <td className="px-5 py-4 whitespace-nowrap text-center">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold ${gradeChip(score.grade)}`}>
+                  <td className="px-3 md:px-5 py-3 md:py-4 whitespace-nowrap text-center text-[10px]">
+                    <span className={`inline-flex items-center px-2 py-0.5 md:px-2.5 md:py-1 rounded-md md:rounded-lg text-[10px] md:text-xs font-bold ${gradeChip(score.grade)}`}>
                       {score.grade || "?"}
                     </span>
                   </td>
@@ -331,6 +361,20 @@ export default function MarksTablePage() {
           </table>
         </div>
       </div>
+      <ConfirmModal 
+        isOpen={confirmRemove}
+        onClose={() => setConfirmRemove(false)}
+        onConfirm={handleRemoveMarksheet}
+        title="Remove Marksheet"
+        message="Are you sure you want to remove all uploaded marks for this course? This will clear the marksheet but keep the course itself. This cannot be undone."
+      />
+      <ConfirmModal 
+        isOpen={confirmFinalize}
+        onClose={() => setConfirmFinalize(false)}
+        onConfirm={handleFinalize}
+        title="Finalize Course"
+        message="Finalize this course? This permanently locks all scores and calculates final cohort ranks. This cannot be undone."
+      />
     </div>
   );
 }

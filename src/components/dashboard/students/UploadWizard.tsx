@@ -61,8 +61,8 @@ export default function UploadWizard({
           </div>
           <div className={`w-32 h-1 mx-4 rounded-full transition-all duration-500 ${step >= 2 ? 'bg-blue-600' : 'bg-slate-200 dark:bg-white/10'}`}></div>
           <div className="flex flex-col items-center">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm transition-all duration-300 ${step >= 2 ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)]' : 'bg-white/[0.05] text-slate-500 border border-white/[0.1]'}`}>02</div>
-            <span className={`text-[10px] mt-3 font-black uppercase tracking-widest ${step >= 2 ? 'text-blue-400' : 'text-slate-600'}`}>Upload</span>
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm transition-all duration-300 ${step >= 2 ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)]' : 'bg-slate-100 dark:bg-white/[0.05] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/[0.1]'}`}>02</div>
+            <span className={`text-[10px] mt-3 font-black uppercase tracking-widest ${step >= 2 ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-600'}`}>Upload</span>
           </div>
         </div>
       </div>
@@ -106,7 +106,7 @@ export default function UploadWizard({
         {step === 2 && (
           <div className="space-y-8 animate-fade-in max-w-2xl mx-auto w-full">
             <div className="text-center space-y-2">
-              <h2 className="text-xl font-black text-white uppercase tracking-wider">Upload Data for Section {selectedSection}</h2>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-wider">Upload Data for Section {selectedSection}</h2>
               <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Provide an Excel file containing the student records.</p>
             </div>
 
@@ -136,7 +136,7 @@ export default function UploadWizard({
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="w-full py-4 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 bg-white/[0.05] hover:bg-white/[0.08] transition-all border border-white/[0.1]"
+                className="w-full py-4 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-white/[0.05] hover:bg-slate-200 dark:hover:bg-white/[0.08] transition-all border border-slate-200 dark:border-white/[0.1]"
               >
                 ← Previous Stage
               </button>

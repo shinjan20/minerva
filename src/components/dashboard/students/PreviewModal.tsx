@@ -51,7 +51,7 @@ export default function PreviewModal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50/30">
+        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30 dark:bg-white/[0.01]">
           <div className="space-y-4">
             <div className="space-y-3">
               {existingCount > 0 && (
@@ -96,10 +96,10 @@ export default function PreviewModal({
             <div className="bg-white/[0.02] border border-white/[0.08] rounded-[2rem] overflow-hidden shadow-2xl">
               <div className="overflow-x-auto">
                 <table className="min-w-full border-collapse">
-                  <thead className="bg-[#020617] border-b border-white/[0.06]">
+                  <thead className="bg-slate-100 dark:bg-[#020617] border-b border-slate-200 dark:border-white/[0.06]">
                     <tr>
                       {Object.keys(previewData[0] || {}).slice(0, 7).map((key, i) => (
-                        <th key={key + i} className="px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] whitespace-nowrap">{key}</th>
+                        <th key={key + i} className="px-8 py-5 text-left text-[10px] font-black text-slate-500 dark:text-slate-500 uppercase tracking-[0.2em] whitespace-nowrap">{key}</th>
                       ))}
                     </tr>
                   </thead>
@@ -116,8 +116,8 @@ export default function PreviewModal({
                             const isIdCol = key.trim().toLowerCase().replace(/\s+/g, '') === 'studentid' || key.trim().toLowerCase().replace(/\s+/g, '') === 'id';
                             const isRoleCol = key.trim().toLowerCase().includes('cr') || key.trim().toLowerCase().includes('role');
                             return (
-                              <td key={key + i} className="px-8 py-4 text-sm text-slate-400 font-bold uppercase truncate max-w-[200px] relative">
-                                <span className={isIdCol ? "text-blue-400 font-mono font-black" : "text-slate-300"}>
+                              <td key={key + i} className="px-8 py-4 text-sm text-slate-600 dark:text-slate-400 font-bold uppercase truncate max-w-[200px] relative">
+                                <span className={isIdCol ? "text-blue-600 dark:text-blue-400 font-mono font-black" : "text-slate-800 dark:text-slate-300"}>
                                   {String(row[key] || "")}
                                 </span>
                                 {isExisting && isIdCol && (
@@ -152,7 +152,7 @@ export default function PreviewModal({
           <button 
             type="button"
             onClick={onClose}
-            className="px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 bg-white/[0.05] hover:bg-white/[0.1] transition-all"
+            className="px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-white/[0.05] hover:bg-slate-200 dark:hover:bg-white/[0.1] transition-all border border-slate-200 dark:border-white/[0.1]"
             disabled={loading}
           >
             Abort

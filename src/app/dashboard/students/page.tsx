@@ -6,6 +6,7 @@ import * as xlsx from "xlsx";
 import UploadWizard from "@/components/dashboard/students/UploadWizard";
 import PreviewModal from "@/components/dashboard/students/PreviewModal";
 import StudentTable from "@/components/dashboard/students/StudentTable";
+import ConfirmModal from "@/components/ConfirmModal";
 
 export default function StudentRosterPage() {
   const [step, setStep] = useState<1 | 2>(1);
@@ -15,6 +16,9 @@ export default function StudentRosterPage() {
   const [loading, setLoading] = useState(false);
   const [rosterData, setRosterData] = useState<any[]>([]);
   const [rosterLoading, setRosterLoading] = useState(true);
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; id: string; name: string }>({
+    isOpen: false, id: "", name: ""
+  });
 
   const loadRoster = async () => {
     setRosterLoading(true);
@@ -104,8 +108,12 @@ export default function StudentRosterPage() {
   };
 
   const handleRemoveStudent = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to remove ${name} from the active roster?`)) return;
-    
+    setDeleteModal({ isOpen: true, id, name });
+  };
+
+  const confirmRemoveStudent = async () => {
+    const { id, name } = deleteModal;
+    setDeleteModal({ ...deleteModal, isOpen: false });
     const loadingToast = toast.loading(`Removing ${name}...`);
     try {
       const res = await fetch(`/api/students/roster?id=${id}`, { method: 'DELETE' });
@@ -163,6 +171,14 @@ export default function StudentRosterPage() {
         rosterLoading={rosterLoading}
         onResendInvite={handleResendInvite}
         onRemoveStudent={handleRemoveStudent}
+      />
+
+      <ConfirmModal 
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
+        onConfirm={confirmRemoveStudent}
+        title="Remove Student"
+        message={`Are you sure you want to remove ${deleteModal.name} from the active roster? This action cannot be undone.`}
       />
     </div>
   );

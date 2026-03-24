@@ -87,13 +87,13 @@ export default function ManageCRsPage() {
             {crs.map((cr) => (
               <tr key={cr.id} className="hover:bg-white/[0.02] transition-colors group">
                 <td className="px-8 py-6 whitespace-nowrap">
-                  <div className="text-sm font-bold text-white uppercase tracking-tight group-hover:text-blue-400 transition-colors">{cr.name}</div>
+                  <div className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{cr.name}</div>
                   <div className="text-[11px] font-mono text-slate-500 mt-1">{cr.email}</div>
                 </td>
                 <td className="px-8 py-6 whitespace-nowrap">
                   <div className="flex gap-2">
                     <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md text-[10px] font-black">SEC {cr.section}</span>
-                    <span className="px-2 py-0.5 bg-white/[0.05] text-slate-400 border border-white/10 rounded-md text-[10px] font-black">{cr.batch}</span>
+                    <span className="px-2 py-0.5 bg-slate-100 dark:bg-white/[0.05] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10 rounded-md text-[10px] font-black">{cr.batch}</span>
                   </div>
                 </td>
                 <td className="px-8 py-6 whitespace-nowrap">

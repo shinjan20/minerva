@@ -2,8 +2,8 @@
 import React from 'react';
 
 export default function Logo({ className = "", isDark = false }: { className?: string; isDark?: boolean }) {
-  const textColor = isDark ? "text-white" : "text-gray-900";
-  const subtitleColor = isDark ? "text-gray-300" : "text-gray-500";
+  const textColor = "text-slate-900 dark:text-white";
+  const subtitleColor = "text-slate-500 dark:text-slate-400";
 
   return (
     <div className={`flex items-center gap-4 ${className}`}>
@@ -12,7 +12,7 @@ export default function Logo({ className = "", isDark = false }: { className?: s
         <img
           src="/minerva_logo.png"
           alt="Minerva Logo"
-          className="h-12 md:h-14 w-auto object-contain drop-shadow-sm group-hover:scale-105 transition-transform duration-300"
+          className="h-12 md:h-14 w-auto object-contain drop-shadow-sm group-hover:scale-105 transition-transform duration-300 dark:invert"
         />
         
         <div className="flex flex-col justify-center">

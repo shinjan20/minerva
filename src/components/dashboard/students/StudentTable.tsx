@@ -76,55 +76,57 @@ export default function StudentTable({
   };
 
   return (
-    <div className="bg-white/[0.02] border border-white/[0.06] backdrop-blur-3xl rounded-[2.5rem] shadow-2xl relative overflow-hidden animate-fade-in-up mt-16">
+    <div className="bg-white/[0.02] border border-white/[0.06] backdrop-blur-3xl rounded-2xl md:rounded-[2.5rem] shadow-2xl relative overflow-hidden animate-fade-in-up mt-8 md:mt-16">
       <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-600/30 to-indigo-600/30"></div>
-      <div className="p-10 border-b border-white/[0.06] flex flex-col xl:flex-row xl:items-center justify-between gap-8">
+      <div className="p-6 md:p-10 border-b border-white/[0.06] flex flex-col xl:flex-row xl:items-center justify-between gap-6 md:gap-8">
         <div className="space-y-1">
-          <h3 className="text-xl font-black uppercase tracking-widest text-white flex items-center gap-3">
-             <span className="w-2 h-6 bg-blue-600 rounded-full" />
+          <h3 className="text-lg md:text-xl font-black uppercase tracking-widest text-slate-900 dark:text-white flex items-center gap-3">
+             <span className="w-1.5 md:w-2 h-5 md:h-6 bg-blue-600 rounded-full" />
              Registered Students
           </h3>
-          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-2 pl-5">
+          <p className="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-1 md:mt-2 pl-4 md:pl-5">
             <span className="text-blue-400">{filteredRoster.length}</span> students matches your filters
           </p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-4">
-          <select 
-            value={filterBatch}
-            onChange={(e) => { setFilterBatch(e.target.value); setCurrentPage(1); }}
-            className="appearance-none pl-4 pr-10 py-3 bg-white/[0.03] border border-white/[0.08] rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 focus:outline-none focus:border-blue-500/50 transition-all cursor-pointer hover:bg-white/[0.05]"
-          >
-            <option value="ALL">All Batches</option>
-            {Array.from(new Set(rosterData.map(s => s.batch).filter(Boolean))).map(b => (
-              <option key={b} value={b}>{b}</option>
-            ))}
-          </select>
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 md:gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:gap-4">
+            <select 
+              value={filterBatch}
+              onChange={(e) => { setFilterBatch(e.target.value); setCurrentPage(1); }}
+              className="appearance-none px-4 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 focus:outline-none focus:border-blue-500/50 transition-all cursor-pointer hover:bg-white/[0.05]"
+            >
+              <option value="ALL">All Batches</option>
+              {Array.from(new Set(rosterData.map(s => s.batch).filter(Boolean))).map(b => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </select>
 
-          <select 
-            value={filterSection}
-            onChange={(e) => { setFilterSection(e.target.value); setCurrentPage(1); }}
-            className="appearance-none pl-4 pr-10 py-3 bg-white/[0.03] border border-white/[0.08] rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 focus:outline-none focus:border-blue-500/50 transition-all cursor-pointer hover:bg-white/[0.05]"
-          >
-            <option value="ALL">All Sections</option>
-            {sectionOptions.map(s => (
-              <option key={s} value={s}>SEC {s}</option>
-            ))}
-          </select>
+            <select 
+              value={filterSection}
+              onChange={(e) => { setFilterSection(e.target.value); setCurrentPage(1); }}
+              className="appearance-none px-4 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-400 focus:outline-none focus:border-blue-500/50 transition-all cursor-pointer hover:bg-white/[0.05]"
+            >
+              <option value="ALL">All Sections</option>
+              {sectionOptions.map(s => (
+                <option key={s} value={s}>SEC {s}</option>
+              ))}
+            </select>
+          </div>
 
           <input
             type="text"
-            placeholder="Search by name or ID..."
-            className="pl-4 pr-4 py-3 bg-white/[0.03] border border-white/[0.08] rounded-xl text-[10px] font-black uppercase tracking-widest text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 transition-all w-full sm:w-64"
+            placeholder="Search students..."
+            className="px-4 py-2.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 transition-all w-full sm:w-64"
             value={searchTerm}
             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
           />
           
           <button 
             onClick={handleDownloadTemplate}
-            className="px-6 py-3 bg-white text-blue-600 border border-white/[0.08] rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:scale-105 transition-all flex items-center justify-center gap-2"
+            className="px-6 py-2.5 bg-white text-blue-600 border border-white/[0.08] rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-lg hover:scale-105 transition-all flex items-center justify-center gap-2"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
             Template
           </button>
         </div>
@@ -136,7 +138,7 @@ export default function StudentTable({
         </div>
       ) : paginatedRoster.length === 0 ? (
         <div className="p-24 text-center">
-          <h3 className="text-xl font-black text-white uppercase tracking-wider">No Students Found</h3>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-wider">No Students Found</h3>
           <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] max-w-sm mx-auto mt-3 italic leading-loose">
             No students match your current search or filters.
           </p>
@@ -147,26 +149,26 @@ export default function StudentTable({
             <table className="min-w-full border-collapse">
               <thead>
                 <tr className="bg-white/[0.02] border-b border-white/[0.06]">
-                  <th className="px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Student ID</th>
-                  <th className="px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Full Name</th>
-                  <th className="px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Email Address</th>
-                  <th className="px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Section</th>
-                  <th className="px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Status</th>
-                  <th className="px-8 py-5 text-right text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]">Actions</th>
+                  <th className="px-4 md:px-8 py-5 text-left text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Student ID</th>
+                  <th className="px-4 md:px-8 py-5 text-left text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Full Name</th>
+                  <th className="hidden lg:table-cell px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Email Address</th>
+                  <th className="px-4 md:px-8 py-5 text-left text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Section</th>
+                  <th className="hidden sm:table-cell px-8 py-5 text-left text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Status</th>
+                  <th className="px-4 md:px-8 py-5 text-right text-[9px] md:text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.03]">
                 {paginatedRoster.map((student) => (
                   <tr key={student.id} className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="px-8 py-5 whitespace-nowrap text-[12px] font-black font-mono text-blue-400 tracking-tight">{student.student_id}</td>
-                    <td className="px-8 py-5 whitespace-nowrap text-sm text-white font-bold uppercase">{student.name}</td>
-                    <td className="px-8 py-5 whitespace-nowrap text-[12px] font-medium text-slate-400 font-mono opacity-80">{student.email}</td>
-                    <td className="px-8 py-5 whitespace-nowrap">
-                      <span className="px-3 py-1 inline-flex text-[10px] font-black rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-widest">
-                        SEC {student.section}
+                    <td className="px-4 md:px-8 py-4 md:py-5 whitespace-nowrap text-[11px] md:text-[12px] font-black font-mono text-blue-400 tracking-tight">{student.student_id}</td>
+                    <td className="px-4 md:px-8 py-4 md:py-5 whitespace-nowrap text-xs md:text-sm text-slate-900 dark:text-white font-bold uppercase">{student.name}</td>
+                    <td className="hidden lg:table-cell px-8 py-5 whitespace-nowrap text-[12px] font-medium text-slate-400 font-mono opacity-80">{student.email}</td>
+                    <td className="px-4 md:px-8 py-4 md:py-5 whitespace-nowrap">
+                      <span className="px-2 md:px-3 py-1 inline-flex text-[9px] md:text-[10px] font-black rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-widest">
+                        {student.section}
                       </span>
                     </td>
-                    <td className="px-8 py-5 whitespace-nowrap">
+                    <td className="hidden sm:table-cell px-8 py-5 whitespace-nowrap">
                       {student.status === "ACTIVE" ? (
                         <span className="flex items-center gap-1.5 text-[9px] font-black text-emerald-500 uppercase tracking-widest">
                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
@@ -179,21 +181,21 @@ export default function StudentTable({
                         </span>
                       )}
                     </td>
-                    <td className="px-8 py-5 whitespace-nowrap text-right">
-                      <div className="flex items-center justify-end gap-3">
+                    <td className="px-4 md:px-8 py-4 md:py-5 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-2 md:gap-3">
                         {student.status === "PENDING" && (
                           <button
                             onClick={() => onResendInvite(student.email, student.name)}
-                            className="py-2 px-4 rounded-xl bg-blue-500/10 text-blue-400 text-[9px] font-black uppercase tracking-widest border border-blue-500/20 hover:bg-blue-600 hover:text-white transition-all"
+                            className="py-1.5 md:py-2 px-3 md:px-4 rounded-lg md:rounded-xl bg-blue-500/10 text-blue-400 text-[8px] md:text-[9px] font-black uppercase tracking-widest border border-blue-500/20 hover:bg-blue-600 hover:text-white transition-all whitespace-nowrap"
                           >
                             Invite
                           </button>
                         )}
                         <button
                           onClick={() => onRemoveStudent(student.id, student.name)}
-                          className="py-2 px-4 rounded-xl bg-red-500/10 text-red-400 text-[9px] font-black uppercase tracking-widest border border-red-500/20 hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                          className="py-1.5 md:py-2 px-3 md:px-4 rounded-lg md:rounded-xl bg-red-500/10 text-red-400 text-[8px] md:text-[9px] font-black uppercase tracking-widest border border-red-500/20 hover:bg-red-500 hover:text-white transition-all shadow-sm"
                         >
-                          Remove
+                          Del
                         </button>
                       </div>
                     </td>
