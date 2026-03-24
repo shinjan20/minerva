@@ -112,7 +112,15 @@ export async function GET(
       if (aggregateTotal === null) {
           // If neither _total nor snapshot exists, check for a column named 'TOTAL' or 'total'
           const totalKey = Object.keys(pData).find(k => k.toLowerCase() === "total");
-          if (totalKey) aggregateTotal = parseFloat(pData[totalKey]);
+          if (totalKey) {
+            aggregateTotal = parseFloat(pData[totalKey]);
+          } else {
+            // FALLBACK: Simple sum of all numeric components for real-time visibility
+            const numericScores = Object.values(comps).filter(v => typeof v === 'number') as number[];
+            if (numericScores.length > 0) {
+              aggregateTotal = numericScores.reduce((a, b) => a + b, 0);
+            }
+          }
       }
 
       return {

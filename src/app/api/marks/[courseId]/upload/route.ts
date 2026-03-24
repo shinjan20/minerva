@@ -277,7 +277,10 @@ export async function POST(
       .in("student_id", uniqueStudentIds);
 
     const validatedScores = scoresToMap.map(uploadItem => {
-      const match = rosterProfiles?.find(r => r.student_id === uploadItem.student_id);
+      // Normalize r.student_id for comparison since uploadItem.student_id is already normalized
+      const match = rosterProfiles?.find(r => 
+          r.student_id.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() === uploadItem.student_id
+      );
       const userObj = match ? (Array.isArray(match.users) ? match.users[0] : match.users) : null;
       
       const isRegistered = !!userObj;
@@ -331,9 +334,18 @@ export async function POST(
              }
              
              previewRows[vs.student_id].components[vs.component] = vs.score === null ? vs.status : vs.score;
+             
+             // Dynamic Total calculation
+             const compValues = Object.values(previewRows[vs.student_id].components);
+             previewRows[vs.student_id].total = compValues.reduce((sum: number, val: any) => {
+                 if (typeof val === 'number') return sum + val;
+                 return sum;
+             }, 0);
         });
 
         const pColumns = parsedComponents.map(c => ({ name: c.name, maxScore: c.maxScore }));
+        // Append Total column to metadata
+        pColumns.push({ name: "Total", maxScore: pColumns.reduce((s, c) => s + c.maxScore, 0) });
 
         return NextResponse.json({
              preview: {
