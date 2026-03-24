@@ -3,7 +3,7 @@ import { getServiceSupabase } from "@/lib/supabase";
 import * as xlsx from "xlsx";
 const pdfParseLib = require("pdf-parse");
 const pdfParseFn: (buf: Buffer) => Promise<any> = typeof pdfParseLib === 'function' ? pdfParseLib : pdfParseLib.default;
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { getSession } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";

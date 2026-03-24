@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabase";
 import { containsProfanity } from "@/lib/profanity";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { sendEmail } from "@/lib/email";
 import { generateOTPVerificationEmail } from "@/lib/email-templates";
 

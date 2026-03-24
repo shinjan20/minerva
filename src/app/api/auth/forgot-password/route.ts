@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabase";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { sendEmail } from "@/lib/email";
 import { generatePasswordResetEmail } from "@/lib/email-templates";
 

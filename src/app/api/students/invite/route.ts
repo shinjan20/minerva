@@ -3,7 +3,7 @@ import { getServiceSupabase } from "@/lib/supabase";
 import { getSession } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
 import { generateStudentInviteEmail } from "@/lib/email-templates";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
 export async function POST(request: Request) {

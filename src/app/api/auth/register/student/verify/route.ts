@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabase";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { encrypt, type UserPayload } from "@/lib/auth";
 
 export async function POST(request: Request) {

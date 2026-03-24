@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabase";
 import * as xlsx from "xlsx";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { getSession } from "@/lib/auth";
 import { cleanProfanity } from "@/lib/profanity";
