@@ -39,18 +39,25 @@ export async function POST(
 ) {
   try {
     const session = await getSession();
-    if (!session || session.role === "STUDENT") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    if (!session || session.role !== "CR") {
+      return NextResponse.json({ error: "Only Class Representatives (CRs) can define grading breakups." }, { status: 403 });
+    }
+
+    const supabase = getServiceSupabase();
+
+    // Verify course belongs to CR's section/batch
+    const { data: course } = await supabase
+      .from("courses")
+      .select("section, batch")
+      .eq("id", params.id)
+      .single();
+
+    if (course?.section !== session.section || course?.batch !== session.batch) {
+      return NextResponse.json({ error: "Unauthorized: You can only manage breakups for your own section/batch." }, { status: 403 });
     }
 
     const payload = await request.json();
     const sum = Number(payload.quiz_pct) + Number(payload.midterm_pct) + Number(payload.project_pct) + Number(payload.endterm_pct) + Number(payload.cp_pct);
-    
-    if (Math.abs(sum - 100) > 0.01) {
-      return NextResponse.json({ error: `Weights must sum exactly to 100. Current sum: ${sum}` }, { status: 400 });
-    }
-
-    const supabase = getServiceSupabase();
 
     const { data: existing } = await supabase
       .from("score_breakup")

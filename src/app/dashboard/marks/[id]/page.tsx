@@ -43,6 +43,7 @@ export default function MarksTablePage() {
   const [isLocked, setIsLocked] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [confirmFinalize, setConfirmFinalize] = useState(false);
+  const [stats, setStats] = useState<{avg: number|null, max: number|null, median: number|null}|null>(null);
 
   useEffect(() => {
     fetchMarks();
@@ -60,6 +61,7 @@ export default function MarksTablePage() {
         setRole(data.role);
         setRole(data.role);
         setIsLocked(data.is_locked || false);
+        setStats(data.stats || null);
       }
     } catch (err) {
       toast.error("Failed to load marks matrix");
@@ -219,6 +221,27 @@ export default function MarksTablePage() {
           </button>
         </div>
       </div>
+
+      {/* Statistical Summary */}
+      {stats && (stats.avg !== null || stats.max !== null || stats.median !== null) && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 animate-fade-in-up">
+          <div className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] rounded-[2rem] p-6 shadow-sm dark:shadow-xl relative overflow-hidden group">
+            <div className="absolute top-0 inset-x-0 h-1 bg-blue-500/20 group-hover:bg-blue-500/40 transition-all" />
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Course Average</p>
+            <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{stats.avg?.toFixed(2) || "—"}</p>
+          </div>
+          <div className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] rounded-[2rem] p-6 shadow-sm dark:shadow-xl relative overflow-hidden group">
+            <div className="absolute top-0 inset-x-0 h-1 bg-emerald-500/20 group-hover:bg-emerald-500/40 transition-all" />
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Highest Score</p>
+            <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tighter">{stats.max?.toFixed(1) || "—"}</p>
+          </div>
+          <div className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] rounded-[2rem] p-6 shadow-sm dark:shadow-xl relative overflow-hidden group">
+            <div className="absolute top-0 inset-x-0 h-1 bg-amber-500/20 group-hover:bg-amber-500/40 transition-all" />
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Median Score</p>
+            <p className="text-3xl font-black text-amber-600 dark:text-amber-400 tracking-tighter">{stats.median?.toFixed(1) || "—"}</p>
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] rounded-[2rem] overflow-hidden shadow-sm dark:shadow-2xl">

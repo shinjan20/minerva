@@ -38,6 +38,8 @@ export default function ScoreBreakupPage() {
   const [courseTerm, setCourseTerm] = useState<number | string>("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [role, setRole] = useState("STUDENT");
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     fetchBreakup();
@@ -45,6 +47,13 @@ export default function ScoreBreakupPage() {
 
   const fetchBreakup = async () => {
     try {
+      const authRes = await fetch("/api/auth/me");
+      const authData = await authRes.json();
+      if (authRes.ok) {
+        setRole(authData.user.role);
+        setUser(authData.user);
+      }
+
       const res = await fetch(`/api/courses/${id}/breakup`);
       const data = await res.json();
       if (res.ok) {
@@ -228,7 +237,7 @@ export default function ScoreBreakupPage() {
           </div>
         </div>
 
-        {!breakup.is_locked && (
+        {(!breakup.is_locked && role === "CR") && (
           <div className="flex justify-end pt-4">
             <button
               type="submit" disabled={saving || !isSumValid}
@@ -236,6 +245,13 @@ export default function ScoreBreakupPage() {
             >
               {saving ? "Updating System..." : "Apply Configuration"}
             </button>
+          </div>
+        )}
+        {role !== "CR" && (
+          <div className="flex justify-center pt-8 border-t border-slate-100 dark:border-white/5">
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 dark:bg-white/[0.05] px-6 py-3 rounded-xl border border-dashed border-slate-200 dark:border-white/[0.1]">
+                Contact the batch Class Representative (CR) to modify this grading policy.
+             </p>
           </div>
         )}
       </form>
